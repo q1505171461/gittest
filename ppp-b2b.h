@@ -54,22 +54,39 @@ typedef struct {
 **/
 // 
 typedef struct {
+    uint32_t BDtime: 17; // 历元时刻（天内秒）->4bit预留
+    uint32_t CRC: 24; // 校验位(24bit)
     uint8_t mesTypeID : 6; // 消息类型
-    uint32_t BDtime: 17; // 历元时刻（天内秒）
-    uint8_t IOD_Corr_C0; // 改正数版本号
-    int16_t C0; // 钟差改正数
-    uint8_t Rev; // 预留
-    uint8_t CRC; // 校验位
-}  type1satelliteMask; // 卫星掩码
+    uint8_t IODSSR: 2; // IODSSR SSR 版本号
+    uint8_t IODP: 4; // IODP 掩码版本号
+    uint64_t BDSMask: 63; //BDS掩码
+    uint64_t GPSMask: 37; //GPS掩码
+    uint64_t GalileoMask: 37; //Galileo掩码
+    uint64_t GlonassMask: 37; //Glonass掩码 ->81+174bit预留
+}type1satelliteMask; // 卫星掩码
 
 typedef struct {
-    uint8_t NumC; // 钟差改正数的卫星数量
-    uint8_t NumO; // 轨道改正数的卫星数量
-    uint32_t ClockCorrectionEpoch; // 钟差改正数历元时刻
-    int16_t ClockCorrection; // 钟差改正数内容部分
-    uint8_t Reserved; // 预留位
-    uint8_t CRC; // 校验位
-} InformationType6;
+    uint32_t SatSlot: 9; // 掩码位置号
+    uint32_t IODN: 10; // 基本导航电文版本号
+    uint8_t IODCorr: 3; // 改正数版本号（匹配钟差的IODCorr）
+    uint16_t radialCorr: 15; //径向改正数(15*)*0.0016米
+    int16_t tangentialCorr: 13; //切向改正数(13*)*0.0016米
+    int16_t normalCorr: 13; //法向改正数(13*)*0.0016米
+    uint8_t URAClass: 3; // 用户距离精度指数
+} type2sub1orbitCorrection;// 消息类型2子类型1轨道改正数
+
+typedef struct {
+    uint32_t BDtime: 17; // 历元时刻（天内秒）->4bit预留
+    uint32_t CRC: 24; // 校验位(24bit)
+    uint8_t mesTypeID : 6; // 消息类型
+    uint8_t IODSSR: 2; // IODSSR SSR 版本号
+    uint64_t BDSMask: 63; //BDS掩码
+    uint64_t GPSMask: 37; //GPS掩码
+    uint64_t GalileoMask: 37; //Galileo掩码
+    uint64_t GlonassMask: 37; //Glonass掩码 ->81+174bit预留
+} type2orbitCorrectionAndUserRangeAccuracyIndex;// 轨道改正数及用户测距精度指数
+
+
 
 typedef struct {
     uint8_t NumC; // 钟差改正数的卫星数量
