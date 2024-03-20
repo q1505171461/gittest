@@ -1,4 +1,15 @@
 #include <stdint.h>
+#include <stdio.h>
+#include <ctype.h>
+
+#include <string.h>
+#include <stdlib.h>
+
+#define NUM_SYSTEMS 4
+#define NUM_MODES 16
+#define MAX_NUM_STA 255
+#define MAX_LEN_LINE 600
+
 
 /**
  * 定义每颗卫星四类改正数:
@@ -6,12 +17,6 @@
  * 2.码间偏差改正数
  * 3.卫星钟差改正数
  **/
-
-typedef struct
-{
-    uint16_t SatSlot;               // 掩码位置号
-    float clockCorrectionParameter; // 钟差改正参数
-} Corrections;                      // 一颗卫星包含的改正参数
 
 typedef struct
 {
@@ -42,6 +47,14 @@ typedef struct
     int16_t clockCorrection; // 钟差改正数（15*bit*0.0016）
 } clockCorrection;           // 钟差改正数
 
+typedef struct
+{
+    uint16_t SatSlot;                     // 掩码位置号
+    orbitalCorrectionParameters *orbCorr; // 钟差改正参数
+    clockCorrection cloCorr;
+    URAL *ural;
+    codebias *cbias;
+} Corrections; // 一颗卫星包含的改正参数
 /**
  * 定义编码后数据帧结构,共有7种:
  * 1.卫星掩码
@@ -146,7 +159,6 @@ typedef struct
     type5Sub1SingleURAI URAI[70]; // 数据帧固定包含70个卫星改正数，不足补0 ->预留6bit
 } type5URAI;                      // 用户距离精度指数
 
-
 typedef struct
 {
     uint32_t BDtime : 17;                 // 历元时刻（天内秒）->4bit预留
@@ -198,6 +210,25 @@ typedef struct
 } type7ClockOrbitCombinedCorrection2; // 钟差改正与轨道改正-组合 2
 
 /**
- * 编解码函数
-*/
+ * 编解码
+ */
+// 函数：将整数转换为二进制字符串
 
+void printBinary(unsigned int n, int numBits);
+
+#define STRUCT_SIZE 16 // 486位除以32位（一个整数的位数）得到15.18，向上取整为16个整数
+
+// 定义一个包含486位的结构体
+typedef struct
+{
+    unsigned int bits[STRUCT_SIZE]; // 使用数组来存储位
+} CRCCode;
+
+typedef struct
+{
+    unsigned int bits[STRUCT_SIZE]; // 使用数组来存储位
+} en_decodeContent;
+
+void setBit(CRCCode * , int , int  );
+
+void inputSsr(char (*ssrStr)[MAX_LEN_LINE],Corrections[] , int);
