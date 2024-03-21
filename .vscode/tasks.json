@@ -11,7 +11,8 @@
                 "-g",
                 "*.c",
                 "-o",
-                "${fileDirname}/${fileBasenameNoExtension}"
+                "${fileDirname}/a2.out",
+                "-lm",
             ],
             "options": {
                 "cwd": "${fileDirname}"
