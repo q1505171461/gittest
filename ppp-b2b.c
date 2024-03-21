@@ -232,3 +232,15 @@ void inputSsr(char (*ssrStr)[MAX_LEN_LINE], en_decodeContext context, Correction
         }
     }
 }
+
+
+void encoding6(Corrections *corrs, int len, CRCCode *crcCode){
+    int index_corrs = 0;
+    for (int i=0; i<3; i++){
+        
+    } 
+}
+
+void encodingOrb(Corrections *corrs, int len, CRCCode crcCode){
+    
+}

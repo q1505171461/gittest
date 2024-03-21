@@ -29,11 +29,14 @@ int main()
     Corrections corrs[indexSsrStr-1];
     inputSsr(lines, context, corrs, indexSsrStr);
 
-    CRCCode myStruct = {0};
+    int len_encoded_data = (indexSsrStr-1)%3==0?(indexSsrStr-1)/3:(indexSsrStr-1)/3+1;
+    CRCCode encoded_data[len_encoded_data];
+    encoding6(corrs, indexSsrStr-1,  encoded_data);
 
-    setBit(&myStruct, 0, 1);
-    setBit(&myStruct, 33, 1);
-    setBit(&myStruct, 32, 1);
+    setBit(&encoded_data, 0, 1);
+    setBit(&encoded_data, 33, 1);
+    setBit(&encoded_data, 32, 1);
+
     // 打印每个整数的二进制值
     for (int i = 0; i < STRUCT_SIZE; i++)
     {

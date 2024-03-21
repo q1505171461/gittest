@@ -245,7 +245,8 @@ typedef struct
 
 void setBit(CRCCode *, int, int);
 
-void inputSsr(char (*ssrStr)[MAX_LEN_LINE], en_decodeContext, Corrections[], int);
+void inputSsr(char (*ssrStr)[MAX_LEN_LINE], en_decodeContext context, Corrections *corrs, int len);
 
+void encoding6(Corrections *corrs, int len, CRCCode crcCode);
 
 #endif
