@@ -12,6 +12,8 @@
 #define NUM_MODES 16
 #define MAX_NUM_STA 255
 #define MAX_LEN_LINE 600
+#define MAX_LEN_CRCMESSAGE 486
+#define DEBUG 0
 
 #define BDS_MASK_BEGIN 0
 #define GPS_MASK_BEGIN 63
@@ -44,7 +46,7 @@ typedef struct
 
 typedef struct
 {
-    uint8_t codebiasType;      // 信号与跟踪模式(4bit) 每种卫星导航系统16种
+    uint8_t codebiasType;  // 信号与跟踪模式(4bit) 每种卫星导航系统16种
     int16_t codebiasValue; // 码间偏差值（12*bit*0.017）
 } codebias;                // 码间偏差改正数
 
@@ -56,6 +58,11 @@ typedef struct
 typedef struct
 {
     uint16_t SatSlot;                     // 掩码位置号
+    uint32_t bdt;                         // 北斗时天内秒（单位：秒）
+    uint8_t IODSSR;                 // SSR 版本号 2bit
+    uint8_t IODP;                   // 掩码版本号 4bit
+    uint16_t IODN;                  // 基本导航电文版本号 10bit
+    uint8_t IODCorr;                // 改正数版本号 3bit
     orbitalCorrectionParameters *orbCorr; // 钟差改正参数
     int16_t cloCorr;
     URAL *ural;
@@ -230,7 +237,7 @@ void printBinary(unsigned int n, int numBits);
 // 定义一个包含486位的结构体
 typedef struct
 {
-    unsigned int bits[STRUCT_SIZE]; // 使用数组来存储位
+    uint32_t bits[STRUCT_SIZE]; // 使用数组来存储位
 } CRCCode;
 
 typedef struct
@@ -240,13 +247,14 @@ typedef struct
     uint8_t IODP;                   // 掩码版本号 4bit
     uint16_t IODN;                  // 基本导航电文版本号 10bit
     uint8_t IODCorr;                // 改正数版本号 3bit
-    unsigned int bits[STRUCT_SIZE]; // 使用数组来存储位
 } en_decodeContext;
 
 void setBit(CRCCode *, int, int);
+void setBits(CRCCode *crcCode, int bitIndexBegin, int bitIndexEnd, uint64_t value);
+
 
 void inputSsr(char (*ssrStr)[MAX_LEN_LINE], en_decodeContext context, Corrections *corrs, int len);
 
-void encoding6(Corrections *corrs, int len, CRCCode crcCode);
+void encoding6(Corrections *corrs, int len, CRCCode *, int);
 
 #endif
