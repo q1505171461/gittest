@@ -32,6 +32,23 @@ int main()
     Corrections corrs[indexSsrStr - 1];
     inputSsr(lines, context, corrs, indexSsrStr);
 
+    //encoding1
+    CRCCode encoded_data1 = {0};
+    encoding1(corrs, indexSsrStr - 1, &encoded_data1);
+    printf("uint32_t %3d: ", 15 * 32 + 6);
+    printBinary(encoded_data1.bits[15], 6);
+    printf("\n");
+    for (int i = 0; i < STRUCT_SIZE - 1; i++)
+    {
+        printf("uint32_t %3d: ", (STRUCT_SIZE - 1 - i)* 32);
+        printBinary(encoded_data1.bits[STRUCT_SIZE - 2 - i], 32);
+        printf("\n");
+    }
+    uint32_t crc = crcEncoding462(encoded_data1);
+    printf("CRC-24 校验码为: 0x%06X\n", crc>>8);
+    printf("\n");
+
+    //encoding6
     int len_encoded_data = (indexSsrStr - 1) % 3 == 0 ? (indexSsrStr - 1) / 3 : (indexSsrStr - 1) / 3 + 1;
     CRCCode encoded_data[len_encoded_data];
     encoding6(corrs, indexSsrStr - 1, encoded_data, len_encoded_data);
@@ -41,12 +58,15 @@ int main()
     {
         printf("uint32_t %3d: ", 15 * 32 + 6);
         printBinary(encoded_data[j].bits[15], 6);
+        printf("\n");
         for (int i = 0; i < STRUCT_SIZE - 1; i++)
         {
             printf("uint32_t %3d: ", (STRUCT_SIZE - 1 - i)* 32);
             printBinary(encoded_data[j].bits[STRUCT_SIZE - 2 - i], 32);
-            // printf("\n");
+            printf("\n");
         }
+        uint32_t crc = crcEncoding462(encoded_data[j]);
+        printf("CRC-24 校验码为: 0x%06X\n", crc>>8);
         printf("\n");
         // break;
     }
@@ -64,3 +84,4 @@ int main()
     // }
     return 0;
 }
+

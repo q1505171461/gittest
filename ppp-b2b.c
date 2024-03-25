@@ -15,7 +15,7 @@ void printBinary(unsigned int n, int numBits)
         }
         printf("%d", (n >> i) & 1);
     }
-    printf("\n");
+    // printf("\n");
 }
 
 void setBit(CRCCode *crcCode, int bitIndex, int value)
@@ -74,10 +74,11 @@ void inputSsr(char (*ssrStr)[MAX_LEN_LINE], en_decodeContext context, Correction
         {
             uint32_t seconds = timeToSeconds(hour, minute, second);
             context.BDT = seconds;
-            if (DEBUG){
+            if (DEBUG)
+            {
                 printf("时间（天内秒）：%d\n", seconds);
             }
-            
+
             continue;
         }
 
@@ -115,10 +116,10 @@ void inputSsr(char (*ssrStr)[MAX_LEN_LINE], en_decodeContext context, Correction
             corrs[index_corrs].IODN = context.IODN;
             corrs[index_corrs].IODP = context.IODP;
             corrs[index_corrs].IODSSR = context.IODSSR;
-            if (DEBUG){
+            if (DEBUG)
+            {
                 printf("卫星号：%s : %d\n", token, corrs[index_corrs].SatSlot);
             }
-            
         }
         else
         {
@@ -205,7 +206,8 @@ void inputSsr(char (*ssrStr)[MAX_LEN_LINE], en_decodeContext context, Correction
                         clk = -26.2128;
                     }
                     corrs[index_corrs].cloCorr = (int)round(clk / 0.0016);
-                    if (DEBUG){
+                    if (DEBUG)
+                    {
                         printf("clk：%lf\n", clk);
                         printf("clk：%d\n", corrs[index_corrs].cloCorr);
                     }
@@ -236,7 +238,8 @@ void inputSsr(char (*ssrStr)[MAX_LEN_LINE], en_decodeContext context, Correction
                     {
                         if (strcmp(tracking_modes[index_tracking_modes][j], cbiasType[index_cbias]) == 0)
                         {
-                            if (DEBUG){
+                            if (DEBUG)
+                            {
                                 printf("------------------ok;;cbias：%s: %d\n", cbiasType[index_cbias], j);
                             }
                             cbiasNum = j;
@@ -244,7 +247,8 @@ void inputSsr(char (*ssrStr)[MAX_LEN_LINE], en_decodeContext context, Correction
                             break;
                         };
                     }
-                    if (DEBUG){
+                    if (DEBUG)
+                    {
                         printf("cbias：%s: ", cbiasType[index_cbias]);
                     }
                 }
@@ -259,10 +263,10 @@ void inputSsr(char (*ssrStr)[MAX_LEN_LINE], en_decodeContext context, Correction
                     {
                         cbiasValue[index_cbias] = -35.746;
                     }
-                    if(DEBUG){
+                    if (DEBUG)
+                    {
                         printf("%lf\n", cbiasValue[index_cbias]);
                     }
-                    
                 }
                 if (cbiasNum != -1)
                 {
@@ -276,7 +280,66 @@ void inputSsr(char (*ssrStr)[MAX_LEN_LINE], en_decodeContext context, Correction
             break;
         }
     }
-    qsort(corrs, index_corrs+1, sizeof(Corrections), compare);
+    qsort(corrs, index_corrs + 1, sizeof(Corrections), compare);
+}
+
+/******************************************************************************
+ * Name:    crc24_pppB2b  x24+x23+x18+x17+x14+x11+x10+x7+x6+x5+x4+x3+x1+1
+ * Poly:    0x864CFB
+ * Init:    0x000000
+ * Refin:   False
+ * Refout:  False
+ * Xorout:  0x0000000
+ * Note:
+ *****************************************************************************/
+uint32_t crc24_pppB2b(uint8_t *data, uint16_t length)
+{
+    uint8_t i;
+    uint32_t crc = 0; // Initial value
+    while (length--)
+    {
+        crc ^= (uint8_t)(*data++); // crc ^=(uint8_t)(*data); data++;
+        for (i = 0; i < 8; ++i)
+        {
+            if (crc & 0x80000000)
+                crc = (crc << 1) ^ 0x864CFB00;
+            else
+                crc <<= 1;
+        }
+    }
+    return crc;
+}
+
+uint32_t crcEncoding462(CRCCode crcdata)
+{
+    int len = 4 * STRUCT_SIZE - 3 - 3;
+    uint8_t uint8data[len];
+    uint8data[0] = crcdata.bits[STRUCT_SIZE - 1] >> 0;
+    for (int i = 1; i < STRUCT_SIZE - 1; i++)
+    {
+        uint8data[(i - 1) * 4 + 1] = crcdata.bits[STRUCT_SIZE - i - 1] >> 24;
+        uint8data[(i - 1) * 4 + 2] = crcdata.bits[STRUCT_SIZE - i - 1] >> 16;
+        uint8data[(i - 1) * 4 + 3] = crcdata.bits[STRUCT_SIZE - i - 1] >> 8;
+        uint8data[(i - 1) * 4 + 4] = crcdata.bits[STRUCT_SIZE - i - 1] >> 0;
+    }
+    uint8data[len - 1] = crcdata.bits[0] >> 24;
+    return crc24_pppB2b(uint8data, len);
+}
+
+void encoding1(Corrections *corrs, int len, CRCCode *encoded_data){
+    memset(encoded_data, 0, sizeof(CRCCode));
+    // MesTypeID
+    setBits(encoded_data, MAX_LEN_CRCMESSAGE - 6, MAX_LEN_CRCMESSAGE, 1);
+    setBits(encoded_data, MAX_LEN_CRCMESSAGE - 6 - 17, MAX_LEN_CRCMESSAGE - 6, corrs[0].bdt);
+    setBits(encoded_data, MAX_LEN_CRCMESSAGE - 27 - 2, MAX_LEN_CRCMESSAGE - 27, corrs[0].IODSSR);
+    setBits(encoded_data, MAX_LEN_CRCMESSAGE - 29 - 4, MAX_LEN_CRCMESSAGE - 29, corrs[0].IODP);
+
+    for (int i = 0; i < len; i++){
+        setBits(encoded_data, MAX_LEN_CRCMESSAGE - 33 - corrs[i].SatSlot, MAX_LEN_CRCMESSAGE - 33 - corrs[i].SatSlot + 1, 1);
+    }
+    // CRC
+    uint32_t crc = crcEncoding462(*(encoded_data));
+    setBits(encoded_data, 0, 24, crc >> 8);
 }
 
 void encoding6(Corrections *corrs, int len, CRCCode *encoded_data, int len_encoded_data)
@@ -285,9 +348,6 @@ void encoding6(Corrections *corrs, int len, CRCCode *encoded_data, int len_encod
     for (int i = 0; i < len_encoded_data; i++)
     {
         memset(encoded_data + i, 0, sizeof(CRCCode));
-        // if (i ==11){
-        //     printf("%d", corrs[i * 3].bdt);
-        // }
         // MesTypeID
         setBits(encoded_data + i, MAX_LEN_CRCMESSAGE - 6, MAX_LEN_CRCMESSAGE, 6);
         setBits(encoded_data + i, MAX_LEN_CRCMESSAGE - 14 - 17, MAX_LEN_CRCMESSAGE - 14, corrs[i * 3].bdt);
@@ -322,15 +382,22 @@ void encoding6(Corrections *corrs, int len, CRCCode *encoded_data, int len_encod
                 setBits(encoded_data + i, MAX_LEN_CRCMESSAGE - index_orb_begin - 45 - 15, MAX_LEN_CRCMESSAGE - index_orb_begin - 45, corrs[i * 3 + j].orbCorr->radialCorr);
                 setBits(encoded_data + i, MAX_LEN_CRCMESSAGE - index_orb_begin - 60 - 13, MAX_LEN_CRCMESSAGE - index_orb_begin - 60, corrs[i * 3 + j].orbCorr->tangentialCorr);
                 setBits(encoded_data + i, MAX_LEN_CRCMESSAGE - index_orb_begin - 73 - 13, MAX_LEN_CRCMESSAGE - index_orb_begin - 73, corrs[i * 3 + j].orbCorr->normalCorr);
-                if (corrs[i * 3 + j].ural){
+                if (corrs[i * 3 + j].ural)
+                {
                     setBits(encoded_data + i, MAX_LEN_CRCMESSAGE - index_orb_begin - 86 - 3, MAX_LEN_CRCMESSAGE - index_orb_begin - 86, corrs[i * 3 + j].ural->URAClass);
                     setBits(encoded_data + i, MAX_LEN_CRCMESSAGE - index_orb_begin - 89 - 3, MAX_LEN_CRCMESSAGE - index_orb_begin - 89, corrs[i * 3 + j].ural->URAValue);
-                }else{
+                }
+                else
+                {
                     setBits(encoded_data + i, MAX_LEN_CRCMESSAGE - index_orb_begin - 86 - 3, MAX_LEN_CRCMESSAGE - index_orb_begin - 86, 0);
                     setBits(encoded_data + i, MAX_LEN_CRCMESSAGE - index_orb_begin - 89 - 3, MAX_LEN_CRCMESSAGE - index_orb_begin - 89, 0);
                 }
-                
             }
         }
+        // CRC
+        uint32_t crc = crcEncoding462(*(encoded_data + i));
+        setBits(encoded_data + i, 0, 24, crc >> 8);
     }
 }
+
+
