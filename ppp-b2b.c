@@ -326,15 +326,16 @@ uint32_t crcEncoding462(CRCCode crcdata)
     return crc24_pppB2b(uint8data, len);
 }
 
-void encoding1(Corrections *corrs, int len, CRCCode *encoded_data){
-    memset(encoded_data, 0, sizeof(CRCCode));
+void encoding1(Corrections *corrs, int len, CRCCode *encoded_data)
+{
     // MesTypeID
     setBits(encoded_data, MAX_LEN_CRCMESSAGE - 6, MAX_LEN_CRCMESSAGE, 1);
     setBits(encoded_data, MAX_LEN_CRCMESSAGE - 6 - 17, MAX_LEN_CRCMESSAGE - 6, corrs[0].bdt);
     setBits(encoded_data, MAX_LEN_CRCMESSAGE - 27 - 2, MAX_LEN_CRCMESSAGE - 27, corrs[0].IODSSR);
     setBits(encoded_data, MAX_LEN_CRCMESSAGE - 29 - 4, MAX_LEN_CRCMESSAGE - 29, corrs[0].IODP);
 
-    for (int i = 0; i < len; i++){
+    for (int i = 0; i < len; i++)
+    {
         setBits(encoded_data, MAX_LEN_CRCMESSAGE - 33 - corrs[i].SatSlot, MAX_LEN_CRCMESSAGE - 33 - corrs[i].SatSlot + 1, 1);
     }
     // CRC
@@ -342,62 +343,109 @@ void encoding1(Corrections *corrs, int len, CRCCode *encoded_data){
     setBits(encoded_data, 0, 24, crc >> 8);
 }
 
-void encoding6(Corrections *corrs, int len, CRCCode *encoded_data, int len_encoded_data)
+int encoding3(Corrections *corrs, int len, CRCCode *encoded_data)
 {
-    int index_corrs = 0;
-    for (int i = 0; i < len_encoded_data; i++)
+    int n_used = 0;
+    int n_used_len = 34;
+    const int max_len = 462;
+    // MesTypeID
+    setBits(encoded_data, MAX_LEN_CRCMESSAGE - 6, MAX_LEN_CRCMESSAGE, 3);
+    setBits(encoded_data, MAX_LEN_CRCMESSAGE - 6 - 17, MAX_LEN_CRCMESSAGE - 6, corrs[0].bdt);
+    setBits(encoded_data, MAX_LEN_CRCMESSAGE - 27 - 2, MAX_LEN_CRCMESSAGE - 27, corrs[0].IODSSR);
+    while (n_used_len + corrs[n_used].len_codebias * 16 + 13 < max_len)
     {
-        memset(encoded_data + i, 0, sizeof(CRCCode));
-        // MesTypeID
-        setBits(encoded_data + i, MAX_LEN_CRCMESSAGE - 6, MAX_LEN_CRCMESSAGE, 6);
-        setBits(encoded_data + i, MAX_LEN_CRCMESSAGE - 14 - 17, MAX_LEN_CRCMESSAGE - 14, corrs[i * 3].bdt);
-        setBits(encoded_data + i, MAX_LEN_CRCMESSAGE - 35 - 2, MAX_LEN_CRCMESSAGE - 35, corrs[i * 3].IODSSR);
-        setBits(encoded_data + i, MAX_LEN_CRCMESSAGE - 37 - 4, MAX_LEN_CRCMESSAGE - 37, corrs[i * 3].IODP);
-        setBits(encoded_data + i, MAX_LEN_CRCMESSAGE - 41 - 9, MAX_LEN_CRCMESSAGE - 41, corrs[i * 3].SatSlot);
-
-        int index_orb_begin = -1;
-        for (int j = 0; j < 3; j++)
-        { // 每条消息3组轨道钟差改正数
-            if (i * 3 + j < len)
-            {
-                index_orb_begin = 50 + 18 * (j + 1);
-                setBits(encoded_data + i, MAX_LEN_CRCMESSAGE - 6 - 5, MAX_LEN_CRCMESSAGE - 6, j + 1);
-                setBits(encoded_data + i, MAX_LEN_CRCMESSAGE - 11 - 3, MAX_LEN_CRCMESSAGE - 11, j + 1);
-                setBits(encoded_data + i, MAX_LEN_CRCMESSAGE - 50 - 3 - 18 * j, MAX_LEN_CRCMESSAGE - 50 - 18 * j, corrs[i * 3 + j].IODCorr);
-                setBits(encoded_data + i, MAX_LEN_CRCMESSAGE - 53 - 15 - 18 * j, MAX_LEN_CRCMESSAGE - 53 - 18 * j, corrs[i * 3 + j].cloCorr);
-            }
+        setBits(encoded_data, MAX_LEN_CRCMESSAGE - n_used_len - 9, MAX_LEN_CRCMESSAGE - n_used_len, corrs[n_used].SatSlot);
+        setBits(encoded_data, MAX_LEN_CRCMESSAGE - n_used_len - 9 - 4, MAX_LEN_CRCMESSAGE - n_used_len - 9, corrs[n_used].len_codebias - 1);
+        for (int j = 0; j < corrs[n_used].len_codebias; j++)
+        {
+            setBits(encoded_data, MAX_LEN_CRCMESSAGE - n_used_len - 13 - 4, MAX_LEN_CRCMESSAGE - n_used_len - 13, corrs[n_used].cbias->codebiasType);
+            setBits(encoded_data, MAX_LEN_CRCMESSAGE - n_used_len - 17 - 12, MAX_LEN_CRCMESSAGE - n_used_len - 17, corrs[n_used].cbias->codebiasValue);
         }
-
-        // orb
-        setBits(encoded_data + i, MAX_LEN_CRCMESSAGE - index_orb_begin - 17, MAX_LEN_CRCMESSAGE - index_orb_begin, corrs[i * 3].bdt);
-        setBits(encoded_data + i, MAX_LEN_CRCMESSAGE - index_orb_begin - 21 - 2, MAX_LEN_CRCMESSAGE - index_orb_begin - 21, corrs[i * 3].IODSSR);
-        for (int j = 0; j < 3; j++)
-        { // 每条消息3组轨道钟差改正数
-            if (i * 3 + j < len)
-            {
-                index_orb_begin += 69 * j;
-                setBits(encoded_data + i, MAX_LEN_CRCMESSAGE - index_orb_begin - 23 - 9, MAX_LEN_CRCMESSAGE - index_orb_begin - 23, corrs[i * 3 + j].SatSlot);
-                setBits(encoded_data + i, MAX_LEN_CRCMESSAGE - index_orb_begin - 32 - 10, MAX_LEN_CRCMESSAGE - index_orb_begin - 32, corrs[i * 3 + j].IODN);
-                setBits(encoded_data + i, MAX_LEN_CRCMESSAGE - index_orb_begin - 42 - 3, MAX_LEN_CRCMESSAGE - index_orb_begin - 42, corrs[i * 3 + j].IODCorr);
-                setBits(encoded_data + i, MAX_LEN_CRCMESSAGE - index_orb_begin - 45 - 15, MAX_LEN_CRCMESSAGE - index_orb_begin - 45, corrs[i * 3 + j].orbCorr->radialCorr);
-                setBits(encoded_data + i, MAX_LEN_CRCMESSAGE - index_orb_begin - 60 - 13, MAX_LEN_CRCMESSAGE - index_orb_begin - 60, corrs[i * 3 + j].orbCorr->tangentialCorr);
-                setBits(encoded_data + i, MAX_LEN_CRCMESSAGE - index_orb_begin - 73 - 13, MAX_LEN_CRCMESSAGE - index_orb_begin - 73, corrs[i * 3 + j].orbCorr->normalCorr);
-                if (corrs[i * 3 + j].ural)
-                {
-                    setBits(encoded_data + i, MAX_LEN_CRCMESSAGE - index_orb_begin - 86 - 3, MAX_LEN_CRCMESSAGE - index_orb_begin - 86, corrs[i * 3 + j].ural->URAClass);
-                    setBits(encoded_data + i, MAX_LEN_CRCMESSAGE - index_orb_begin - 89 - 3, MAX_LEN_CRCMESSAGE - index_orb_begin - 89, corrs[i * 3 + j].ural->URAValue);
-                }
-                else
-                {
-                    setBits(encoded_data + i, MAX_LEN_CRCMESSAGE - index_orb_begin - 86 - 3, MAX_LEN_CRCMESSAGE - index_orb_begin - 86, 0);
-                    setBits(encoded_data + i, MAX_LEN_CRCMESSAGE - index_orb_begin - 89 - 3, MAX_LEN_CRCMESSAGE - index_orb_begin - 89, 0);
-                }
-            }
-        }
-        // CRC
-        uint32_t crc = crcEncoding462(*(encoded_data + i));
-        setBits(encoded_data + i, 0, 24, crc >> 8);
+        n_used += 1;
+        n_used_len += corrs[n_used].len_codebias * 16 + 13;
     }
+    setBits(encoded_data, MAX_LEN_CRCMESSAGE - 29 - 5, MAX_LEN_CRCMESSAGE - 29, n_used);
+    // CRC
+    uint32_t crc = crcEncoding462(*(encoded_data));
+    setBits(encoded_data, 0, 24, crc >> 8);
+    return n_used;
 }
 
+int decoding3(Corrections *corrs, int len, CRCCode *encoded_data)
+{
+    
+    return 1;
+}
 
+int encoding6(Corrections *corrs, int len, CRCCode *encoded_data)
+{
+    int ret = 3;
+    // MesTypeID
+    setBits(encoded_data, MAX_LEN_CRCMESSAGE - 6, MAX_LEN_CRCMESSAGE, 6);
+    setBits(encoded_data, MAX_LEN_CRCMESSAGE - 14 - 17, MAX_LEN_CRCMESSAGE - 14, corrs[0].bdt);
+    setBits(encoded_data, MAX_LEN_CRCMESSAGE - 35 - 2, MAX_LEN_CRCMESSAGE - 35, corrs[0].IODSSR);
+    setBits(encoded_data, MAX_LEN_CRCMESSAGE - 37 - 4, MAX_LEN_CRCMESSAGE - 37, corrs[0].IODP);
+    setBits(encoded_data, MAX_LEN_CRCMESSAGE - 41 - 9, MAX_LEN_CRCMESSAGE - 41, corrs[0].SatSlot);
+
+    int index_orb_begin = -1;
+    for (int i = 0; i < 3; i++)
+    { // 每条消息3组轨道钟差改正数
+        if (i < len)
+        {
+            index_orb_begin = 50 + 18 * (i + 1);
+            setBits(encoded_data, MAX_LEN_CRCMESSAGE - 6 - 5, MAX_LEN_CRCMESSAGE - 6, i + 1);
+            setBits(encoded_data, MAX_LEN_CRCMESSAGE - 11 - 3, MAX_LEN_CRCMESSAGE - 11, i + 1);
+            setBits(encoded_data, MAX_LEN_CRCMESSAGE - 50 - 3 - 18 * i, MAX_LEN_CRCMESSAGE - 50 - 18 * i, corrs[i].IODCorr);
+            setBits(encoded_data, MAX_LEN_CRCMESSAGE - 53 - 15 - 18 * i, MAX_LEN_CRCMESSAGE - 53 - 18 * i, corrs[i].cloCorr);
+        }
+    }
+
+    // orb
+    setBits(encoded_data, MAX_LEN_CRCMESSAGE - index_orb_begin - 17, MAX_LEN_CRCMESSAGE - index_orb_begin, corrs[0].bdt);
+    setBits(encoded_data, MAX_LEN_CRCMESSAGE - index_orb_begin - 21 - 2, MAX_LEN_CRCMESSAGE - index_orb_begin - 21, corrs[0].IODSSR);
+    for (int i = 0; i < 3; i++)
+    { // 每条消息3组轨道钟差改正数
+        if (i < len)
+        {
+            index_orb_begin += 69 * i;
+            setBits(encoded_data, MAX_LEN_CRCMESSAGE - index_orb_begin - 23 - 9, MAX_LEN_CRCMESSAGE - index_orb_begin - 23, corrs[i].SatSlot);
+            setBits(encoded_data, MAX_LEN_CRCMESSAGE - index_orb_begin - 32 - 10, MAX_LEN_CRCMESSAGE - index_orb_begin - 32, corrs[i].IODN);
+            setBits(encoded_data, MAX_LEN_CRCMESSAGE - index_orb_begin - 42 - 3, MAX_LEN_CRCMESSAGE - index_orb_begin - 42, corrs[i].IODCorr);
+            setBits(encoded_data, MAX_LEN_CRCMESSAGE - index_orb_begin - 45 - 15, MAX_LEN_CRCMESSAGE - index_orb_begin - 45, corrs[i].orbCorr->radialCorr);
+            setBits(encoded_data, MAX_LEN_CRCMESSAGE - index_orb_begin - 60 - 13, MAX_LEN_CRCMESSAGE - index_orb_begin - 60, corrs[i].orbCorr->tangentialCorr);
+            setBits(encoded_data, MAX_LEN_CRCMESSAGE - index_orb_begin - 73 - 13, MAX_LEN_CRCMESSAGE - index_orb_begin - 73, corrs[i].orbCorr->normalCorr);
+            if (corrs[i].ural)
+            {
+                setBits(encoded_data, MAX_LEN_CRCMESSAGE - index_orb_begin - 86 - 3, MAX_LEN_CRCMESSAGE - index_orb_begin - 86, corrs[i].ural->URAClass);
+                setBits(encoded_data, MAX_LEN_CRCMESSAGE - index_orb_begin - 89 - 3, MAX_LEN_CRCMESSAGE - index_orb_begin - 89, corrs[i].ural->URAValue);
+            }
+            else
+            {
+                setBits(encoded_data, MAX_LEN_CRCMESSAGE - index_orb_begin - 86 - 3, MAX_LEN_CRCMESSAGE - index_orb_begin - 86, 0);
+                setBits(encoded_data, MAX_LEN_CRCMESSAGE - index_orb_begin - 89 - 3, MAX_LEN_CRCMESSAGE - index_orb_begin - 89, 0);
+            }
+        }
+        else
+            ret = i;
+    }
+    // CRC
+    uint32_t crc = crcEncoding462(*encoded_data);
+    setBits(encoded_data, 0, 24, crc >> 8);
+    return ret;
+}
+
+void print_encoded_data(CRCCode encoded_data)
+{
+    printf("uint32_t %3d: ", 15 * 32 + 6);
+    printBinary(encoded_data.bits[15], 6);
+    printf("\n");
+    for (int i = 0; i < STRUCT_SIZE - 1; i++)
+    {
+        printf("uint32_t %3d: ", (STRUCT_SIZE - 1 - i) * 32);
+        printBinary(encoded_data.bits[STRUCT_SIZE - 2 - i], 32);
+        printf("\n");
+    }
+    uint32_t crc = crcEncoding462(encoded_data);
+    printf("CRC-24 校验码为: 0x%06X\n", crc >> 8);
+    printf("\n");
+}

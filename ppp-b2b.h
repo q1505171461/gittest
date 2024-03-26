@@ -255,7 +255,8 @@ uint32_t crc24_pppB2b(uint8_t *data, uint16_t length);
 uint32_t crcEncoding462(CRCCode crcdata);
 void inputSsr(char (*ssrStr)[MAX_LEN_LINE], en_decodeContext context, Corrections *corrs, int len);
 
-void encoding1(Corrections *corrs, int len, CRCCode *encoded_data);
-void encoding6(Corrections *corrs, int len, CRCCode *, int);
-
+void encoding1(Corrections *corrs, int len, CRCCode *);
+int encoding3(Corrections *corrs, int len, CRCCode *);
+int encoding6(Corrections *corrs, int len, CRCCode *);
+void print_encoded_data(CRCCode);
 #endif
