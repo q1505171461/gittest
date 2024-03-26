@@ -44,7 +44,7 @@ int main()
         CRCCode encoded_data = {0};
         n3_used += encoding3(corrs + n3_used, indexSsrStr - 1 - n3_used, &encoded_data);
         print_encoded_data(encoded_data);
-        decoding3(corrs, indexSsrStr - 1, &encoded_data);
+        decoding3(corrs, indexSsrStr - 1, &encoded_data, context);
     }
 
     // Encoding6 钟差改正数与轨道改正数-组合 1

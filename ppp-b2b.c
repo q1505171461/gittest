@@ -39,6 +39,22 @@ void setBits(CRCCode *crcCode, int bitIndexBegin, int bitIndexEnd, uint64_t valu
     }
 }
 
+uint64_t getBit(CRCCode *crcCode, int bitIndex)
+{
+    return (*(((unsigned int *)crcCode) + bitIndex / 32) & (1 << (bitIndex % 32))) == 0 ? 0 : 1;
+}
+
+uint64_t getBits(CRCCode *crcCode, int bitIndexBegin, int bitIndexEnd)
+{
+    uint32_t ret = 0;
+    for (int i = 0; i < bitIndexEnd - bitIndexBegin; i++)
+    {
+        int a = getBit(crcCode, i + bitIndexBegin);
+        ret |= (getBit(crcCode, i + bitIndexBegin) << i);
+    }
+    return ret;
+}
+
 // 函数：将时间转换为天内秒
 uint32_t timeToSeconds(int hour, int minute, int second)
 {
@@ -328,7 +344,7 @@ uint32_t crcEncoding462(CRCCode crcdata)
 
 uint32_t crcEncoding462_check(CRCCode crcdata)
 {
-    return crcEncoding462(crcdata)^(crcdata.bits[0] << 8);
+    return !(crcEncoding462(crcdata) ^ (crcdata.bits[0] << 8));
 }
 
 void encoding1(Corrections *corrs, int len, CRCCode *encoded_data)
@@ -376,9 +392,20 @@ int encoding3(Corrections *corrs, int len, CRCCode *encoded_data)
     return n_used;
 }
 
-void decoding3(Corrections *corrs, int len, CRCCode *encoded_data)
+void decoding3(Corrections *corrs, int len, CRCCode *encoded_data, en_decodeContext context)
 {
-    printf("检查CRC：%x", crcEncoding462_check(*encoded_data));
+    if (!crcEncoding462_check(*encoded_data))
+    {
+        printf("error：CRC检验失败。");
+        return;
+    }
+    uint32_t bdt = getBits(encoded_data, MAX_LEN_CRCMESSAGE - 6 - 17, MAX_LEN_CRCMESSAGE-6);
+    uint8_t iodssr = getBits(encoded_data, MAX_LEN_CRCMESSAGE - 27 - 2, MAX_LEN_CRCMESSAGE-27);
+    uint8_t num_sta = getBits(encoded_data, MAX_LEN_CRCMESSAGE - 29 - 5, MAX_LEN_CRCMESSAGE-29);
+    uint8_t iodssr = getBits(encoded_data, MAX_LEN_CRCMESSAGE - 34 - 9, MAX_LEN_CRCMESSAGE-34);
+    printf("bdt %d\n", bdt);
+    printf("iodssr %d\n", iodssr);
+    printf("\n");
 }
 
 int encoding6(Corrections *corrs, int len, CRCCode *encoded_data)
