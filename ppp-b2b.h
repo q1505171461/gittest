@@ -257,6 +257,7 @@ void inputSsr(char (*ssrStr)[MAX_LEN_LINE], en_decodeContext context, Correction
 
 void encoding1(Corrections *corrs, int len, CRCCode *);
 int encoding3(Corrections *corrs, int len, CRCCode *);
+void decoding3(Corrections *corrs, int len, CRCCode *);
 int encoding6(Corrections *corrs, int len, CRCCode *);
 void print_encoded_data(CRCCode);
 #endif

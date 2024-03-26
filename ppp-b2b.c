@@ -326,6 +326,11 @@ uint32_t crcEncoding462(CRCCode crcdata)
     return crc24_pppB2b(uint8data, len);
 }
 
+uint32_t crcEncoding462_check(CRCCode crcdata)
+{
+    return crcEncoding462(crcdata)^(crcdata.bits[0] << 8);
+}
+
 void encoding1(Corrections *corrs, int len, CRCCode *encoded_data)
 {
     // MesTypeID
@@ -371,10 +376,9 @@ int encoding3(Corrections *corrs, int len, CRCCode *encoded_data)
     return n_used;
 }
 
-int decoding3(Corrections *corrs, int len, CRCCode *encoded_data)
+void decoding3(Corrections *corrs, int len, CRCCode *encoded_data)
 {
-    
-    return 1;
+    printf("检查CRC：%x", crcEncoding462_check(*encoded_data));
 }
 
 int encoding6(Corrections *corrs, int len, CRCCode *encoded_data)
@@ -446,6 +450,6 @@ void print_encoded_data(CRCCode encoded_data)
         printf("\n");
     }
     uint32_t crc = crcEncoding462(encoded_data);
-    printf("CRC-24 校验码为: 0x%06X\n", crc >> 8);
+    printf("CRC-24 校验码为: 0x%08X\n", crc >> 0);
     printf("\n");
 }
