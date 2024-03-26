@@ -7,6 +7,6 @@ $$g(x) = x^{24} + x^{23} + x^{18} + x^{17} + x^{14} + x^{11} + x^{10} + x^{7} + 
 ---
 ##### 问题
 
-1. URAL算法 $\text{URA}[mm] $计算结果和文档中（17页）不一致  
+1. URAL算法 $\text{URA}[mm] \leq 3 ^ {\text{URA}_\text{CLASS}} $计算结果和文档中（17页）不一致  
 $$ \text{URA}[mm] \leq 3 ^ {\text{URA}_\text{CLASS}} \hspace{0.3em} \left(1 + 0.25 \times \text{URA}_{\text{VALUE}} \right) - 1 $$
 $$\text{URA}[mm] \leq 3 ^ {\text{URA}_\text{CLASS}} \hspace{0.3em} \left(1 + 0.25 \times \text{URA}_{\text{VALUE}} \right) - 1 $$  
