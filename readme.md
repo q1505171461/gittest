@@ -32,12 +32,3 @@ $$g(x) = x^{24} + x^{23} + x^{18} + x^{17} + x^{14} + x^{11} + x^{10} + x^{7} + 
 ||13| 预留 |Reserved| L5 I+Q |NAN| 预留 |Reserved| 预留|Reserved||Reserved|NAN|Reserved|Reserved||||
 ||14| 预留 |Reserved| 预留 |Reserved| 预留 |Reserved| 预留|Reserved||Reserved|Reserved|Reserved|Reserved||||
 ||15| 预留 |Reserved| 预留 |Reserved| 预留 |Reserved| 预留|Reserved||Reserved|Reserved|Reserved|Reserved||||
-|||||||||||||||||||
-|||||||||||||||||||
-|||||||||||||||||||
-|||||||||||||||||||
-|||1I|1C|1W|Reserved|NAN|NAN|Reserved|2I|NAN|Reserved|Reserved|Reserved|3I|Reserved|Reserved|Reserved||
-|||NAN|NAN|Reserved|Reserved|1C|NAN|Reserved|2L|NAN|Reserved|Reserved|5I|5Q|NAN|Reserved|Reserved||
-|||1C|1P|2C|Reserved|Reserved|Reserved|Reserved|Reserved|Reserved|Reserved|Reserved|Reserved|Reserved|Reserved|Reserved|Reserved||
-|||Reserved|1B|1C|Reserved|5aQ|5aI|Reserved|5bI|5bQ|Reserved|Reserved|6C|Reserved|Reserved|Reserved|Reserved||
-|||
