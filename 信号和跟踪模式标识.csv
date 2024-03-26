@@ -1,26 +1,27 @@
-, BDS ,, GPS ,, GLONASS ,, Galileo,,,,,,,,,
-0, B1I ,1I, L1 C/A ,NAN, G1 C/A ,1C, 预留,Reserved,,1I,NAN,1C,Reserved,,,
-1, B1C (D),1C, L1 P ,NAN, G1 P ,1P, E1 B,1B,,1C,NAN,1P,1B,,,
-2, B1C (P),1W, 预留 ,Reserved, G2 C/A ,2C, E1 C,1C,,1W,Reserved,2C,1C,,,
-3, 预留 ,Reserved, 预留 ,Reserved, 预留 ,Reserved, 预留,Reserved,,Reserved,Reserved,Reserved,Reserved,,,
-4, B2a (D),NAN, L1C (P),1C, 预留 ,Reserved, E5a Q,5aQ,,NAN,1C,Reserved,5aQ,,,
-5, B2a (P),NAN, L1C (D+P),NAN, 预留 ,Reserved, E5a I,5aI,,NAN,NAN,Reserved,5aI,,,
-6, 预留 ,Reserved, 预留 ,Reserved, 预留 ,Reserved, 预留,Reserved,,Reserved,Reserved,Reserved,Reserved,,,
-7, B2b-I ,2I, L2C (L),2L, 预留 ,Reserved, E5b I,5bI,,2I,2L,Reserved,5bI,,,
-8, B2b-Q ,NAN, L2C (M+L),NAN, 预留 ,Reserved, E5b Q,5bQ,,NAN,NAN,Reserved,5bQ,,,
-9, 预留 ,Reserved, 预留 ,Reserved, 预留 ,Reserved, 预留,Reserved,,Reserved,Reserved,Reserved,Reserved,,,
-10, 预留 ,Reserved, 预留 ,Reserved, 预留 ,Reserved, 预留,Reserved,,Reserved,Reserved,Reserved,Reserved,,,
-11, 预留 ,Reserved, L5 I ,5I, 预留 ,Reserved, E6 C,6C,,Reserved,5I,Reserved,6C,,,
-12, B3 I ,3I, L5 Q ,5Q, 预留 ,Reserved, 预留,Reserved,,3I,5Q,Reserved,Reserved,,,
-13, 预留 ,Reserved, L5 I+Q ,NAN, 预留 ,Reserved, 预留,Reserved,,Reserved,NAN,Reserved,Reserved,,,
-14, 预留 ,Reserved, 预留 ,Reserved, 预留 ,Reserved, 预留,Reserved,,Reserved,Reserved,Reserved,Reserved,,,
-15, 预留 ,Reserved, 预留 ,Reserved, 预留 ,Reserved, 预留,Reserved,,Reserved,Reserved,Reserved,Reserved,,,
-,,,,,,,,,,,,,,,,
-,,,,,,,,,,,,,,,,
-,,,,,,,,,,,,,,,,
-,,,,,,,,,,,,,,,,
-,,,,,,,,,,,,,,,,
-,1I,1C,1W,Reserved,NAN,NAN,Reserved,2I,NAN,Reserved,Reserved,Reserved,3I,Reserved,Reserved,Reserved
-,NAN,NAN,Reserved,Reserved,1C,NAN,Reserved,2L,NAN,Reserved,Reserved,5I,5Q,NAN,Reserved,Reserved
-,1C,1P,2C,Reserved,Reserved,Reserved,Reserved,Reserved,Reserved,Reserved,Reserved,Reserved,Reserved,Reserved,Reserved,Reserved
-,Reserved,1B,1C,Reserved,5aQ,5aI,Reserved,5bI,5bQ,Reserved,Reserved,6C,Reserved,Reserved,Reserved,Reserved
+||| BDS || GPS || GLONASS || Galileo||||||||||
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+||0| B1I |1I| L1 C/A |NAN| G1 C/A |1C| 预留|Reserved||1I|NAN|1C|Reserved||||
+||1| B1C (D)|1C| L1 P |NAN| G1 P |1P| E1 B|1B||1C|NAN|1P|1B||||
+||2| B1C (P)|1W| 预留 |Reserved| G2 C/A |2C| E1 C|1C||1W|Reserved|2C|1C||||
+||3| 预留 |Reserved| 预留 |Reserved| 预留 |Reserved| 预留|Reserved||Reserved|Reserved|Reserved|Reserved||||
+||4| B2a (D)|NAN| L1C (P)|1C| 预留 |Reserved| E5a Q|5aQ||NAN|1C|Reserved|5aQ||||
+||5| B2a (P)|NAN| L1C (D+P)|NAN| 预留 |Reserved| E5a I|5aI||NAN|NAN|Reserved|5aI||||
+||6| 预留 |Reserved| 预留 |Reserved| 预留 |Reserved| 预留|Reserved||Reserved|Reserved|Reserved|Reserved||||
+||7| B2b-I |2I| L2C (L)|2L| 预留 |Reserved| E5b I|5bI||2I|2L|Reserved|5bI||||
+||8| B2b-Q |NAN| L2C (M+L)|NAN| 预留 |Reserved| E5b Q|5bQ||NAN|NAN|Reserved|5bQ||||
+||9| 预留 |Reserved| 预留 |Reserved| 预留 |Reserved| 预留|Reserved||Reserved|Reserved|Reserved|Reserved||||
+||10| 预留 |Reserved| 预留 |Reserved| 预留 |Reserved| 预留|Reserved||Reserved|Reserved|Reserved|Reserved||||
+||11| 预留 |Reserved| L5 I |5I| 预留 |Reserved| E6 C|6C||Reserved|5I|Reserved|6C||||
+||12| B3 I |3I| L5 Q |5Q| 预留 |Reserved| 预留|Reserved||3I|5Q|Reserved|Reserved||||
+||13| 预留 |Reserved| L5 I+Q |NAN| 预留 |Reserved| 预留|Reserved||Reserved|NAN|Reserved|Reserved||||
+||14| 预留 |Reserved| 预留 |Reserved| 预留 |Reserved| 预留|Reserved||Reserved|Reserved|Reserved|Reserved||||
+||15| 预留 |Reserved| 预留 |Reserved| 预留 |Reserved| 预留|Reserved||Reserved|Reserved|Reserved|Reserved||||
+|||||||||||||||||||
+|||||||||||||||||||
+|||||||||||||||||||
+|||||||||||||||||||
+|||1I|1C|1W|Reserved|NAN|NAN|Reserved|2I|NAN|Reserved|Reserved|Reserved|3I|Reserved|Reserved|Reserved||
+|||NAN|NAN|Reserved|Reserved|1C|NAN|Reserved|2L|NAN|Reserved|Reserved|5I|5Q|NAN|Reserved|Reserved||
+|||1C|1P|2C|Reserved|Reserved|Reserved|Reserved|Reserved|Reserved|Reserved|Reserved|Reserved|Reserved|Reserved|Reserved|Reserved||
+|||Reserved|1B|1C|Reserved|5aQ|5aI|Reserved|5bI|5bQ|Reserved|Reserved|6C|Reserved|Reserved|Reserved|Reserved||
+|||
