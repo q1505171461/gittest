@@ -366,7 +366,7 @@ void encoding1(Corrections *corrs, int len, CRCCode *encoded_data)
 
 int encoding3(Corrections *corrs, int len, CRCCode *encoded_data)
 {
-    Corrections (*aa)[len] = corrs;
+    Corrections (*aa)[len] = (Corrections (*)[len]) corrs;
     int n_used = 0;
     int n_used_len = 34;
     const int max_len = 462;
@@ -376,9 +376,6 @@ int encoding3(Corrections *corrs, int len, CRCCode *encoded_data)
     setBits(encoded_data, MAX_LEN_CRCMESSAGE - 27 - 2, MAX_LEN_CRCMESSAGE - 27, corrs[0].IODSSR);
     while (n_used_len + corrs[n_used].len_codebias * 16 + 13 < max_len)
     {
-        if (corrs[n_used].len_codebias>1){
-            printf("1");
-        }
         setBits(encoded_data, MAX_LEN_CRCMESSAGE - n_used_len - 9, MAX_LEN_CRCMESSAGE - n_used_len, corrs[n_used].SatSlot);
         setBits(encoded_data, MAX_LEN_CRCMESSAGE - n_used_len - 9 - 4, MAX_LEN_CRCMESSAGE - n_used_len - 9, corrs[n_used].len_codebias - 1);
         for (int j = 0; j < corrs[n_used].len_codebias; j++)
@@ -417,6 +414,11 @@ void decoding3(Corrections *corrs, int len, CRCCode *encoded_data, en_decodeCont
         }
         index += 16 * num_cbias + 13;
     }
+}
+
+uint64_t fillUpwards(uint64_t value, int originalLen,int targetLen){
+    uint64_t a = 1;
+    a <<= originalLen;
 }
 
 int encoding6(Corrections *corrs, int len, CRCCode *encoded_data)
