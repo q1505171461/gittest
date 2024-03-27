@@ -260,4 +260,6 @@ int encoding3(Corrections *corrs, int len, CRCCode *);
 void decoding3(Corrections *corrs, int len, CRCCode *, en_decodeContext);
 int encoding6(Corrections *corrs, int len, CRCCode *);
 void print_encoded_data(CRCCode);
+int get_index(Corrections * corrs,int len, uint16_t satslot);
+uint64_t fillUpwards(uint64_t, uint8_t);
 #endif

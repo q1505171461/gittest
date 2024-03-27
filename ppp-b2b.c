@@ -395,7 +395,6 @@ int encoding3(Corrections *corrs, int len, CRCCode *encoded_data)
 
 void decoding3(Corrections *corrs, int len, CRCCode *encoded_data, en_decodeContext context)
 {
-    Corrections (*aa)[len] = (Corrections (*)[len])corrs;
     if (!crcEncoding462_check(*encoded_data))
     {
         printf("error：CRC检验失败。");
@@ -404,21 +403,50 @@ void decoding3(Corrections *corrs, int len, CRCCode *encoded_data, en_decodeCont
     uint32_t bdt = getBits(encoded_data, MAX_LEN_CRCMESSAGE - 6 - 17, MAX_LEN_CRCMESSAGE-6);
     uint8_t iodssr = getBits(encoded_data, MAX_LEN_CRCMESSAGE - 27 - 2, MAX_LEN_CRCMESSAGE-27);
     uint8_t num_sta = getBits(encoded_data, MAX_LEN_CRCMESSAGE - 29 - 5, MAX_LEN_CRCMESSAGE-29);
-    int index = 34;
+    if (bdt != context.BDT){
+        printf("error：BDT。");
+        return;
+    }
+    if (iodssr != context.IODSSR){
+        printf("error：IODSSR。");
+        return;
+    }
+    int index_code = 34;
     for (int i = 0; i<num_sta; i++){
-        uint16_t satslot = getBits(encoded_data, MAX_LEN_CRCMESSAGE - index - 9, MAX_LEN_CRCMESSAGE - index);
-        uint8_t num_cbias = getBits(encoded_data, MAX_LEN_CRCMESSAGE - index - 9 - 4, MAX_LEN_CRCMESSAGE - index - 9)+1;
-        for (int j = 0; j< num_cbias; j++){
-            uint8_t codename = getBits(encoded_data, MAX_LEN_CRCMESSAGE - index - 13 - 4 - j * 16, MAX_LEN_CRCMESSAGE - index - 13 - j * 16);
-            uint16_t codebias_v = getBits(encoded_data, MAX_LEN_CRCMESSAGE - index - 17 - 12 - j * 16, MAX_LEN_CRCMESSAGE - index - 17 - j * 16);
+        uint16_t satslot = getBits(encoded_data, MAX_LEN_CRCMESSAGE - index_code - 9, MAX_LEN_CRCMESSAGE - index_code);
+        int index_corrs;
+        index_corrs = get_index(corrs, len, satslot);
+        if (index_corrs == -1){
+            continue;
         }
-        index += 16 * num_cbias + 13;
+        uint8_t num_cbias = getBits(encoded_data, MAX_LEN_CRCMESSAGE - index_code - 9 - 4, MAX_LEN_CRCMESSAGE - index_code - 9) + 1;
+        corrs[index_corrs].len_codebias = num_cbias;
+        for (int j = 0; j< num_cbias; j++){
+            uint8_t codename = getBits(encoded_data, MAX_LEN_CRCMESSAGE - index_code - 13 - 4 - j * 16, MAX_LEN_CRCMESSAGE - index_code - 13 - j * 16);
+            uint16_t codebias_v = getBits(encoded_data, MAX_LEN_CRCMESSAGE - index_code - 17 - 12 - j * 16, MAX_LEN_CRCMESSAGE - index_code - 17 - j * 16);
+            corrs[index_corrs].cbias[j].codebiasType = codename;
+            corrs[index_corrs].cbias[j].codebiasValue = fillUpwards(codebias_v, 12);
+        }
+        index_code += 16 * num_cbias + 13;
     }
 }
 
-uint64_t fillUpwards(uint64_t value, int originalLen,int targetLen){
+int get_index(Corrections * corrs,int len, uint16_t satslot){
+    for (int i =0; i<len; i++){
+        if (satslot == (corrs+i)->SatSlot){
+            return i;
+        }
+    }
+    return -1;
+}
+
+uint64_t fillUpwards(uint64_t value, uint8_t originalLen){
     uint64_t a = 1;
-    a <<= originalLen;
+    if ((a <<= --originalLen) & value){ // 负数
+        return (0xffffffffffffffff << originalLen) | value;
+    }else{
+        return value;
+    };
 }
 
 int encoding6(Corrections *corrs, int len, CRCCode *encoded_data)
