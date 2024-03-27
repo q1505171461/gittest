@@ -366,6 +366,7 @@ void encoding1(Corrections *corrs, int len, CRCCode *encoded_data)
 
 int encoding3(Corrections *corrs, int len, CRCCode *encoded_data)
 {
+    Corrections (*aa)[len] = corrs;
     int n_used = 0;
     int n_used_len = 34;
     const int max_len = 462;
@@ -375,15 +376,18 @@ int encoding3(Corrections *corrs, int len, CRCCode *encoded_data)
     setBits(encoded_data, MAX_LEN_CRCMESSAGE - 27 - 2, MAX_LEN_CRCMESSAGE - 27, corrs[0].IODSSR);
     while (n_used_len + corrs[n_used].len_codebias * 16 + 13 < max_len)
     {
+        if (corrs[n_used].len_codebias>1){
+            printf("1");
+        }
         setBits(encoded_data, MAX_LEN_CRCMESSAGE - n_used_len - 9, MAX_LEN_CRCMESSAGE - n_used_len, corrs[n_used].SatSlot);
         setBits(encoded_data, MAX_LEN_CRCMESSAGE - n_used_len - 9 - 4, MAX_LEN_CRCMESSAGE - n_used_len - 9, corrs[n_used].len_codebias - 1);
         for (int j = 0; j < corrs[n_used].len_codebias; j++)
         {
-            setBits(encoded_data, MAX_LEN_CRCMESSAGE - n_used_len - 13 - 4, MAX_LEN_CRCMESSAGE - n_used_len - 13, corrs[n_used].cbias->codebiasType);
-            setBits(encoded_data, MAX_LEN_CRCMESSAGE - n_used_len - 17 - 12, MAX_LEN_CRCMESSAGE - n_used_len - 17, corrs[n_used].cbias->codebiasValue);
+            setBits(encoded_data, MAX_LEN_CRCMESSAGE - n_used_len - 13 - 4 - j * 16, MAX_LEN_CRCMESSAGE - n_used_len - 13 - j * 16, corrs[n_used].cbias[j].codebiasType);
+            setBits(encoded_data, MAX_LEN_CRCMESSAGE - n_used_len - 17 - 12 - j * 16, MAX_LEN_CRCMESSAGE - n_used_len - 17 - j * 16, corrs[n_used].cbias[j].codebiasValue);
         }
-        n_used += 1;
         n_used_len += corrs[n_used].len_codebias * 16 + 13;
+        n_used += 1;
     }
     setBits(encoded_data, MAX_LEN_CRCMESSAGE - 29 - 5, MAX_LEN_CRCMESSAGE - 29, n_used);
     // CRC
@@ -394,6 +398,7 @@ int encoding3(Corrections *corrs, int len, CRCCode *encoded_data)
 
 void decoding3(Corrections *corrs, int len, CRCCode *encoded_data, en_decodeContext context)
 {
+    Corrections (*aa)[len] = (Corrections (*)[len])corrs;
     if (!crcEncoding462_check(*encoded_data))
     {
         printf("error：CRC检验失败。");
@@ -402,10 +407,16 @@ void decoding3(Corrections *corrs, int len, CRCCode *encoded_data, en_decodeCont
     uint32_t bdt = getBits(encoded_data, MAX_LEN_CRCMESSAGE - 6 - 17, MAX_LEN_CRCMESSAGE-6);
     uint8_t iodssr = getBits(encoded_data, MAX_LEN_CRCMESSAGE - 27 - 2, MAX_LEN_CRCMESSAGE-27);
     uint8_t num_sta = getBits(encoded_data, MAX_LEN_CRCMESSAGE - 29 - 5, MAX_LEN_CRCMESSAGE-29);
-    uint8_t iodssr = getBits(encoded_data, MAX_LEN_CRCMESSAGE - 34 - 9, MAX_LEN_CRCMESSAGE-34);
-    printf("bdt %d\n", bdt);
-    printf("iodssr %d\n", iodssr);
-    printf("\n");
+    int index = 34;
+    for (int i = 0; i<num_sta; i++){
+        uint16_t satslot = getBits(encoded_data, MAX_LEN_CRCMESSAGE - index - 9, MAX_LEN_CRCMESSAGE - index);
+        uint8_t num_cbias = getBits(encoded_data, MAX_LEN_CRCMESSAGE - index - 9 - 4, MAX_LEN_CRCMESSAGE - index - 9)+1;
+        for (int j = 0; j< num_cbias; j++){
+            uint8_t codename = getBits(encoded_data, MAX_LEN_CRCMESSAGE - index - 13 - 4 - j * 16, MAX_LEN_CRCMESSAGE - index - 13 - j * 16);
+            uint16_t codebias_v = getBits(encoded_data, MAX_LEN_CRCMESSAGE - index - 17 - 12 - j * 16, MAX_LEN_CRCMESSAGE - index - 17 - j * 16);
+        }
+        index += 16 * num_cbias + 13;
+    }
 }
 
 int encoding6(Corrections *corrs, int len, CRCCode *encoded_data)
