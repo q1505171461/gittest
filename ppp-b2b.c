@@ -602,7 +602,6 @@ void decoding6(Corrections *corrs, int len, CRCCode *encoded_data, en_decodeCont
         for (int i = 0; i < NumO; i++)
         {
             uint16_t satslot = getBits(encoded_data, index_code - 69 * i - 23 - 9, index_code - 69 * i - 23);
-            printf("%d\n", satslot);
             uint16_t IODN = getBits(encoded_data, index_code - 69 * i - 32 - 10, index_code - 69 * i - 32);
             uint16_t IODCorr = getBits(encoded_data, index_code - 69 * i - 42 - 3, index_code - 69 * i - 42);
             uint16_t radialCorr = getBits(encoded_data, index_code - 69 * i - 45 - 15, index_code - 69 * i - 45);
