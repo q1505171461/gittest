@@ -30,12 +30,24 @@ int main()
     context.IODP = 1;
     context.IODSSR = 1;
     Corrections corrs[indexSsrStr - 1];
-    inputSsr(lines, context, corrs, indexSsrStr);
+    inputSsr(lines, &context, corrs, indexSsrStr);
 
     // Encoding1 卫星掩码
     CRCCode encoded_data1 = {0};
     encoding1(corrs, indexSsrStr - 1, &encoded_data1);
     print_encoded_data(encoded_data1);
+
+    int sta_list[MAX_NUM_STA]={0};
+    en_decodeContext context_decode = {0};
+    int len_sta_list = decoding1(sta_list, &encoded_data1, &context_decode);
+    Corrections corrs_decoded[len_sta_list];
+    for (int i = 0; i < len_sta_list; i++){
+        memset(corrs_decoded + i, 0, sizeof(Corrections));
+        corrs_decoded[i].bdt = context_decode.BDT;
+        corrs_decoded[i].SatSlot = sta_list[i];
+        corrs_decoded[i].IODSSR = context_decode.IODSSR;
+        corrs_decoded[i].IODP = context_decode.IODP;
+    }
 
     // Encoding3 码间偏差改正数
     int n3_used = 0;
@@ -44,29 +56,17 @@ int main()
         CRCCode encoded_data = {0};
         n3_used += encoding3(corrs + n3_used, indexSsrStr - 1 - n3_used, &encoded_data);
         print_encoded_data(encoded_data);
-        decoding3(corrs, indexSsrStr - 1, &encoded_data, context);
+        decoding3(corrs_decoded, len_sta_list, &encoded_data, &context_decode);
     }
  
-
     // Encoding6 钟差改正数与轨道改正数-组合 1
     int n_used = 0;
     while (n_used < indexSsrStr - 1)
     {
         CRCCode encoded_data = {0};
         n_used += encoding6(corrs + n_used, indexSsrStr - 1 - n_used, &encoded_data);
-        // print_encoded_data(encoded_data);
+        print_encoded_data(encoded_data);
+        decoding6(corrs_decoded, len_sta_list, &encoded_data, &context_decode);
     }
-
-    // 打印字符串数组内容
-    // printf("信号和跟踪模式标识：\n");
-    // for (int i = 0; i < NUM_SYSTEMS; i++)
-    // {
-    //     printf("%s:\n", i == 0 ? "BDS" : (i == 1 ? "GPS" : (i == 2 ? "GLONASS" : "Galileo")));
-    //     for (int j = 0; j < NUM_MODES; j++)
-    //     {
-    //         printf("%s ", tracking_modes[i][j]);
-    //     }
-    //     printf("\n");
-    // }
     return 0;
 }

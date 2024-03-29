@@ -71,7 +71,7 @@ int compare(const void *a, const void *b)
     return correctionsA->SatSlot - correctionsB->SatSlot;
 }
 
-void inputSsr(char (*ssrStr)[MAX_LEN_LINE], en_decodeContext context, Corrections *corrs, int len)
+void inputSsr(char (*ssrStr)[MAX_LEN_LINE], en_decodeContext *context, Corrections *corrs, int len)
 {
     int index_corrs = -1;
     for (int i = 0; i < len; i++)
@@ -89,12 +89,11 @@ void inputSsr(char (*ssrStr)[MAX_LEN_LINE], en_decodeContext context, Correction
         if (sscanf(line, "> SSR %d %d %d %d %d %d", &year, &month, &day, &hour, &minute, &second) == 6)
         {
             uint32_t seconds = timeToSeconds(hour, minute, second);
-            context.BDT = seconds;
+            context->BDT = seconds;
             if (DEBUG)
             {
                 printf("时间（天内秒）：%d\n", seconds);
             }
-
             continue;
         }
 
@@ -127,11 +126,11 @@ void inputSsr(char (*ssrStr)[MAX_LEN_LINE], en_decodeContext context, Correction
             default:
                 break;
             }
-            corrs[index_corrs].bdt = context.BDT;
-            corrs[index_corrs].IODCorr = context.IODCorr;
-            corrs[index_corrs].IODN = context.IODN;
-            corrs[index_corrs].IODP = context.IODP;
-            corrs[index_corrs].IODSSR = context.IODSSR;
+            corrs[index_corrs].bdt = context->BDT;
+            corrs[index_corrs].IODCorr = context->IODCorr;
+            corrs[index_corrs].IODN = context->IODN;
+            corrs[index_corrs].IODP = context->IODP;
+            corrs[index_corrs].IODSSR = context->IODSSR;
             if (DEBUG)
             {
                 printf("卫星号：%s : %d\n", token, corrs[index_corrs].SatSlot);
@@ -155,11 +154,8 @@ void inputSsr(char (*ssrStr)[MAX_LEN_LINE], en_decodeContext context, Correction
                         token = strtok(NULL, " ");
                         if (token != NULL && sscanf(token, "%lf", &orb3) == 1)
                         {
-                            orbitalCorrectionParameters *orb = (orbitalCorrectionParameters *)malloc(sizeof(orbitalCorrectionParameters));
-                            orb->bdt = context.BDT;
-                            orb->IODCorr = context.IODCorr;
-                            orb->IODN = context.IODN;
-                            orb->SatSlot = corrs[index_corrs].SatSlot;
+                            corrs[index_corrs].IODCorr = context->IODCorr;
+                            corrs[index_corrs].IODN = context->IODN;
                             if (orb1 > 26.2128)
                             {
                                 orb1 = 26.2128;
@@ -184,17 +180,16 @@ void inputSsr(char (*ssrStr)[MAX_LEN_LINE], en_decodeContext context, Correction
                             {
                                 orb3 = -26.208;
                             }
-                            orb->radialCorr = (int)round(orb1 / 0.0016);
-                            orb->tangentialCorr = (int)round(orb2 / 0.0064);
-                            orb->normalCorr = (int)round(orb3 / 0.0064);
-                            corrs[index_corrs].orbCorr = orb;
+                            corrs[index_corrs].radialCorr = (int)round(orb1 / 0.0016);
+                            corrs[index_corrs].tangentialCorr = (int)round(orb2 / 0.0064);
+                            corrs[index_corrs].normalCorr = (int)round(orb3 / 0.0064);
                             if (DEBUG)
                             {
-                                printBinary(orb->radialCorr, 16);
-                                printBinary(orb->tangentialCorr, 16);
-                                printBinary(orb->normalCorr, 16);
+                                printBinary(corrs[index_corrs].radialCorr, 16);
+                                printBinary(corrs[index_corrs].tangentialCorr, 16);
+                                printBinary(corrs[index_corrs].normalCorr, 16);
                                 printf("轨道数据：%.3lf %.3lf %.3lf\n", orb1, orb2, orb3);
-                                printf("轨道数据：%d %d %d\n", orb->radialCorr, orb->tangentialCorr, orb->normalCorr);
+                                printf("轨道数据：%d %d %d\n", corrs[index_corrs].radialCorr, corrs[index_corrs].tangentialCorr, corrs[index_corrs].normalCorr);
                             }
 
                             break;
@@ -364,9 +359,37 @@ void encoding1(Corrections *corrs, int len, CRCCode *encoded_data)
     setBits(encoded_data, 0, 24, crc >> 8);
 }
 
+int decoding1(int *sta_list, CRCCode *encoded_data, en_decodeContext *context)
+{
+    // MesTypeID
+    if (!crcEncoding462_check(*encoded_data))
+    {
+        printf("error：CRC检验失败。");
+        return 0;
+    }
+    uint32_t bdt = getBits(encoded_data, MAX_LEN_CRCMESSAGE - 6 - 17, MAX_LEN_CRCMESSAGE - 6);
+    uint8_t iodssr = getBits(encoded_data, MAX_LEN_CRCMESSAGE - 27 - 2, MAX_LEN_CRCMESSAGE - 27);
+    uint8_t iodp = getBits(encoded_data, MAX_LEN_CRCMESSAGE - 29 - 4, MAX_LEN_CRCMESSAGE - 29);
+    context->BDT = bdt;
+    context->IODSSR = iodssr;
+    context->IODP = iodp;
+
+    int ret = 0;
+    for (int i = 0; i < 255; i++)
+    {
+        uint64_t mask = getBits(encoded_data, MAX_LEN_CRCMESSAGE - 33 - i - 1, MAX_LEN_CRCMESSAGE - 33 - i);
+        if (mask)
+        {
+            sta_list[ret] = i + 1;
+            ret++;
+        }
+    }
+    return ret;
+}
+
 int encoding3(Corrections *corrs, int len, CRCCode *encoded_data)
 {
-    Corrections (*aa)[len] = (Corrections (*)[len]) corrs;
+    Corrections(*aa)[len] = (Corrections(*)[len])corrs;
     int n_used = 0;
     int n_used_len = 34;
     const int max_len = 462;
@@ -393,35 +416,40 @@ int encoding3(Corrections *corrs, int len, CRCCode *encoded_data)
     return n_used;
 }
 
-void decoding3(Corrections *corrs, int len, CRCCode *encoded_data, en_decodeContext context)
+void decoding3(Corrections *corrs, int len, CRCCode *encoded_data, en_decodeContext* context)
 {
     if (!crcEncoding462_check(*encoded_data))
     {
         printf("error：CRC检验失败。");
         return;
     }
-    uint32_t bdt = getBits(encoded_data, MAX_LEN_CRCMESSAGE - 6 - 17, MAX_LEN_CRCMESSAGE-6);
-    uint8_t iodssr = getBits(encoded_data, MAX_LEN_CRCMESSAGE - 27 - 2, MAX_LEN_CRCMESSAGE-27);
-    uint8_t num_sta = getBits(encoded_data, MAX_LEN_CRCMESSAGE - 29 - 5, MAX_LEN_CRCMESSAGE-29);
-    if (bdt != context.BDT){
-        printf("error：BDT。");
+    uint32_t bdt = getBits(encoded_data, MAX_LEN_CRCMESSAGE - 6 - 17, MAX_LEN_CRCMESSAGE - 6);
+    uint8_t iodssr = getBits(encoded_data, MAX_LEN_CRCMESSAGE - 27 - 2, MAX_LEN_CRCMESSAGE - 27);
+    uint8_t num_sta = getBits(encoded_data, MAX_LEN_CRCMESSAGE - 29 - 5, MAX_LEN_CRCMESSAGE - 29);
+    if (bdt != context->BDT)
+    {
+        printf("error：BDT。%d", context->BDT);
         return;
     }
-    if (iodssr != context.IODSSR){
+    if (iodssr != context->IODSSR)
+    {
         printf("error：IODSSR。");
         return;
     }
     int index_code = 34;
-    for (int i = 0; i<num_sta; i++){
+    for (int i = 0; i < num_sta; i++)
+    {
         uint16_t satslot = getBits(encoded_data, MAX_LEN_CRCMESSAGE - index_code - 9, MAX_LEN_CRCMESSAGE - index_code);
         int index_corrs;
         index_corrs = get_index(corrs, len, satslot);
-        if (index_corrs == -1){
+        if (index_corrs == -1)
+        {
             continue;
         }
         uint8_t num_cbias = getBits(encoded_data, MAX_LEN_CRCMESSAGE - index_code - 9 - 4, MAX_LEN_CRCMESSAGE - index_code - 9) + 1;
         corrs[index_corrs].len_codebias = num_cbias;
-        for (int j = 0; j< num_cbias; j++){
+        for (int j = 0; j < num_cbias; j++)
+        {
             uint8_t codename = getBits(encoded_data, MAX_LEN_CRCMESSAGE - index_code - 13 - 4 - j * 16, MAX_LEN_CRCMESSAGE - index_code - 13 - j * 16);
             uint16_t codebias_v = getBits(encoded_data, MAX_LEN_CRCMESSAGE - index_code - 17 - 12 - j * 16, MAX_LEN_CRCMESSAGE - index_code - 17 - j * 16);
             corrs[index_corrs].cbias[j].codebiasType = codename;
@@ -431,20 +459,27 @@ void decoding3(Corrections *corrs, int len, CRCCode *encoded_data, en_decodeCont
     }
 }
 
-int get_index(Corrections * corrs,int len, uint16_t satslot){
-    for (int i =0; i<len; i++){
-        if (satslot == (corrs+i)->SatSlot){
+int get_index(Corrections *corrs, int len, uint16_t satslot)
+{
+    for (int i = 0; i < len; i++)
+    {
+        if (satslot == (corrs + i)->SatSlot)
+        {
             return i;
         }
     }
     return -1;
 }
 
-uint64_t fillUpwards(uint64_t value, uint8_t originalLen){
+uint64_t fillUpwards(uint64_t value, uint8_t originalLen)
+{
     uint64_t a = 1;
-    if ((a <<= --originalLen) & value){ // 负数
+    if ((a <<= --originalLen) & value)
+    { // 负数
         return (0xffffffffffffffff << originalLen) | value;
-    }else{
+    }
+    else
+    {
         return value;
     };
 }
@@ -479,23 +514,15 @@ int encoding6(Corrections *corrs, int len, CRCCode *encoded_data)
     { // 每条消息3组轨道钟差改正数
         if (i < len)
         {
-            index_orb_begin += 69 * i;
             setBits(encoded_data, MAX_LEN_CRCMESSAGE - index_orb_begin - 23 - 9, MAX_LEN_CRCMESSAGE - index_orb_begin - 23, corrs[i].SatSlot);
             setBits(encoded_data, MAX_LEN_CRCMESSAGE - index_orb_begin - 32 - 10, MAX_LEN_CRCMESSAGE - index_orb_begin - 32, corrs[i].IODN);
             setBits(encoded_data, MAX_LEN_CRCMESSAGE - index_orb_begin - 42 - 3, MAX_LEN_CRCMESSAGE - index_orb_begin - 42, corrs[i].IODCorr);
-            setBits(encoded_data, MAX_LEN_CRCMESSAGE - index_orb_begin - 45 - 15, MAX_LEN_CRCMESSAGE - index_orb_begin - 45, corrs[i].orbCorr->radialCorr);
-            setBits(encoded_data, MAX_LEN_CRCMESSAGE - index_orb_begin - 60 - 13, MAX_LEN_CRCMESSAGE - index_orb_begin - 60, corrs[i].orbCorr->tangentialCorr);
-            setBits(encoded_data, MAX_LEN_CRCMESSAGE - index_orb_begin - 73 - 13, MAX_LEN_CRCMESSAGE - index_orb_begin - 73, corrs[i].orbCorr->normalCorr);
-            if (corrs[i].ural)
-            {
-                setBits(encoded_data, MAX_LEN_CRCMESSAGE - index_orb_begin - 86 - 3, MAX_LEN_CRCMESSAGE - index_orb_begin - 86, corrs[i].ural->URAClass);
-                setBits(encoded_data, MAX_LEN_CRCMESSAGE - index_orb_begin - 89 - 3, MAX_LEN_CRCMESSAGE - index_orb_begin - 89, corrs[i].ural->URAValue);
-            }
-            else
-            {
-                setBits(encoded_data, MAX_LEN_CRCMESSAGE - index_orb_begin - 86 - 3, MAX_LEN_CRCMESSAGE - index_orb_begin - 86, 0);
-                setBits(encoded_data, MAX_LEN_CRCMESSAGE - index_orb_begin - 89 - 3, MAX_LEN_CRCMESSAGE - index_orb_begin - 89, 0);
-            }
+            setBits(encoded_data, MAX_LEN_CRCMESSAGE - index_orb_begin - 45 - 15, MAX_LEN_CRCMESSAGE - index_orb_begin - 45, corrs[i].radialCorr);
+            setBits(encoded_data, MAX_LEN_CRCMESSAGE - index_orb_begin - 60 - 13, MAX_LEN_CRCMESSAGE - index_orb_begin - 60, corrs[i].tangentialCorr);
+            setBits(encoded_data, MAX_LEN_CRCMESSAGE - index_orb_begin - 73 - 13, MAX_LEN_CRCMESSAGE - index_orb_begin - 73, corrs[i].normalCorr);
+            setBits(encoded_data, MAX_LEN_CRCMESSAGE - index_orb_begin - 86 - 3, MAX_LEN_CRCMESSAGE - index_orb_begin - 86, corrs[i].URAClass);
+            setBits(encoded_data, MAX_LEN_CRCMESSAGE - index_orb_begin - 89 - 3, MAX_LEN_CRCMESSAGE - index_orb_begin - 89, corrs[i].URAValue);
+            index_orb_begin += 69;
         }
         else
             ret = i;
@@ -504,6 +531,102 @@ int encoding6(Corrections *corrs, int len, CRCCode *encoded_data)
     uint32_t crc = crcEncoding462(*encoded_data);
     setBits(encoded_data, 0, 24, crc >> 8);
     return ret;
+}
+
+void decoding6(Corrections *corrs, int len, CRCCode *encoded_data, en_decodeContext *context)
+{
+    // MesTypeID
+    if (!crcEncoding462_check(*encoded_data))
+    {
+        printf("error：CRC检验失败。");
+        return;
+    }
+    int NumC = getBits(encoded_data, MAX_LEN_CRCMESSAGE - 6 - 5, MAX_LEN_CRCMESSAGE - 6);
+    int NumO = getBits(encoded_data, MAX_LEN_CRCMESSAGE - 11 - 3, MAX_LEN_CRCMESSAGE - 11);
+    if (NumC > 0)
+    {
+        uint32_t bdt = getBits(encoded_data, MAX_LEN_CRCMESSAGE - 14 - 17, MAX_LEN_CRCMESSAGE - 14);
+        uint8_t iodssr = getBits(encoded_data, MAX_LEN_CRCMESSAGE - 35 - 2, MAX_LEN_CRCMESSAGE - 35);
+        uint8_t iodp = getBits(encoded_data, MAX_LEN_CRCMESSAGE - 37 - 4, MAX_LEN_CRCMESSAGE - 37);
+        uint8_t satslot = getBits(encoded_data, MAX_LEN_CRCMESSAGE - 41 - 9, MAX_LEN_CRCMESSAGE - 41);
+        if (bdt != context->BDT)
+        {
+            printf("error：BDT。%d %d ", context->BDT, bdt);
+            return;
+        }
+        if (iodssr != context->IODSSR)
+        {
+            printf("error：IODSSR。");
+            return;
+        }
+        if (iodp != context->IODP)
+        {
+            printf("error：IODP。");
+            return;
+        }
+
+        int index_corrs = get_index(corrs, len, satslot);
+        for (int i = 0; i < NumC; i++)
+        {
+            uint8_t iodcorr = getBits(encoded_data, MAX_LEN_CRCMESSAGE - 50 - 3 - 18 * i, MAX_LEN_CRCMESSAGE - 50 - 18 * i);
+            uint16_t corr = getBits(encoded_data, MAX_LEN_CRCMESSAGE - 53 - 15 - 18 * i, MAX_LEN_CRCMESSAGE - 53 - 18 * i);
+            if (0 == corrs[index_corrs].IODCorr || iodcorr == corrs[index_corrs].IODCorr)
+            {
+                corrs[index_corrs + i].IODCorr = iodcorr;
+                corrs[index_corrs + i].cloCorr = fillUpwards(corr, 15);
+            }
+            else
+            {
+                printf("error：IODCorr。");
+                return;
+            }
+        }
+    }
+
+    if (NumO > 0)
+    {
+        int index_code = MAX_LEN_CRCMESSAGE - 14 - 36 * (NumC > 0 ? 1 : 0) - 18 * NumC;
+        uint32_t bdt = getBits(encoded_data, index_code - 17, index_code);
+        uint8_t iodssr = getBits(encoded_data, index_code - 21 - 2, index_code - 21);
+        if (bdt != context->BDT)
+        {
+            printf("error：BDT。%d", context->BDT);
+            return;
+        }
+        if (iodssr != context->IODSSR)
+        {
+            printf("error：IODSSR。");
+            return;
+        }
+
+        for (int i = 0; i < NumO; i++)
+        {
+            uint16_t satslot = getBits(encoded_data, index_code - 69 * i - 23 - 9, index_code - 69 * i - 23);
+            printf("%d\n", satslot);
+            uint16_t IODN = getBits(encoded_data, index_code - 69 * i - 32 - 10, index_code - 69 * i - 32);
+            uint16_t IODCorr = getBits(encoded_data, index_code - 69 * i - 42 - 3, index_code - 69 * i - 42);
+            uint16_t radialCorr = getBits(encoded_data, index_code - 69 * i - 45 - 15, index_code - 69 * i - 45);
+            uint16_t tangentialCorr = getBits(encoded_data, index_code - 69 * i - 60 - 13, index_code - 69 * i - 60);
+            uint16_t normalCorr = getBits(encoded_data, index_code - 69 * i - 73 - 13, index_code - 69 * i - 73);
+            uint8_t URAL_CLASS = getBits(encoded_data, index_code - 69 * i - 86 - 3, index_code - 69 * i - 86);
+            uint8_t URAL_VALUE = getBits(encoded_data, index_code - 69 * i - 89 - 3, index_code - 69 * i - 89);
+            int index_corrs = get_index(corrs, len, satslot);
+            if (0 == corrs[index_corrs].IODCorr || IODCorr == corrs[index_corrs].IODCorr)
+            {
+                corrs[index_corrs].IODCorr = IODCorr;
+                corrs[index_corrs].radialCorr = fillUpwards(radialCorr, 15);
+                corrs[index_corrs].tangentialCorr = fillUpwards(tangentialCorr, 13);
+                corrs[index_corrs].normalCorr = fillUpwards(normalCorr, 13);
+                corrs[index_corrs].URAClass = URAL_CLASS;
+                corrs[index_corrs].URAValue = URAL_VALUE;
+            }
+            else
+            {
+                printf("error：IODCorr。");
+                return;
+            }
+        }
+    }
 }
 
 void print_encoded_data(CRCCode encoded_data)
