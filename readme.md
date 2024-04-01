@@ -26,13 +26,31 @@ flowchart LR
     end
     encode-->inssr-->|排序|corrs
     编码数据-->code1 & code3 & code6-->|"CRC"|tran
-
 ```
 
 ##### 解码
 
-1. 先解码code1获得IODP、IODSSR和当前历元有哪些卫星
-2. 解码code3或code6，对比IODP、IODSSR、历元时间等版本号是否一致
+```mermaid
+flowchart LR
+    decode(解码)
+    corrs("corrs(改正数数组)")
+    context("context(IOD设置)")
+    code1("code1(卫星掩码)")
+    code3("code3(码间偏差)")
+    code6("code6(轨道和钟差改正数))")
+    check{"CRC检查"}
+    rec("收到一个数据帧")
+    subgraph "解码数据"
+        direction LR
+        corrs
+        context
+    end
+    decode-->rec-->check
+    check-->|"ok"|code1-->|"新建解码数据(设置卫星号、IODP、IODSSR)"|解码数据
+    check-->|"ok"|code3-->|"填充解码数据(对比IODP、IODSSR)"|解码数据
+    check-->|"ok"|code6-->|"填充解码数据(对比IODCorr、IODSSR)"|解码数据
+    check-->|"fail"|rec
+```
 
 #### 用法
 
