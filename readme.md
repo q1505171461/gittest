@@ -19,8 +19,6 @@ mindmap
     Tools
       Pen and paper
       Mermaid
-
-
 ```
 
 1. CRC算法生成多项式
