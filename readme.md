@@ -6,6 +6,13 @@ $$g(x) = x^{24} + x^{23} + x^{18} + x^{17} + x^{14} + x^{11} + x^{10} + x^{7} + 
 
 [CRC验证链接](http://www.ip33.com/crc.html)
 
+2.asd
+```mermaid
+graph TD;
+    A[开始] --> B[中间步骤]
+    B --> C[结束]
+
+
 ##### 问题
 
 1. URAL算法$\text{URA}[mm] \leq 3 ^ {\text{URA} _\text{CLASS}} \hspace{0.3em} \left(1 + 0.25 \times \text{URA} _{\text{VALUE}} \right) - 1$
