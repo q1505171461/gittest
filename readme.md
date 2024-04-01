@@ -2,23 +2,11 @@
 ### PPP-B2b编解码
 
 ```mermaid
-mindmap
-  root((mindmap))
-    Origins
-      Long history
-      ::icon(fa fa-book)
-      Popularisation
-        British popular psychology author Tony Buzan
-    Research
-      On effectiveness<br/>and features
-      On Automatic creation
-        Uses
-            Creative techniques
-            Strategic planning
-            Argument mapping
-    Tools
-      Pen and paper
-      Mermaid
+graph LR;
+    A-->B;
+    A-->C;
+    B-->D;
+    C-->D;
 ```
 
 1. CRC算法生成多项式
