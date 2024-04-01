@@ -18,7 +18,7 @@ flowchart LR
     context("context(IOD设置)")
     code1("code1(卫星掩码)")
     code3("code3(码间偏差)")
-    code6("code6(轨道和钟差改正数))"
+    code6("code6(轨道和钟差改正数)")
     tran("传输")
     subgraph "编码数据"
         corrs
