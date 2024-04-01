@@ -3,7 +3,7 @@
 
 ```mermaid
 flowchart LR
-    编码(Start)-->id2(Stop)
+    编码(编码)-->decode(解码)
 
 ```
 
