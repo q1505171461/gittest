@@ -1,12 +1,6 @@
 
 ### PPP-B2b编解码
 
-```mermaid
-flowchart LR
-    编码(编码)<--decode(解码)
-
-```
-
 1. CRC算法生成多项式
 $$g(x) = x^{24} + x^{23} + x^{18} + x^{17} + x^{14} + x^{11} + x^{10} + x^{7} + x^{6} + x^{5} + x^{4} + x^{3} + x + 1$$  
 
@@ -16,10 +10,24 @@ $$g(x) = x^{24} + x^{23} + x^{18} + x^{17} + x^{14} + x^{11} + x^{10} + x^{7} + 
 
 ##### 编码
 
-1. 从文本提取数据并排序
-2. 设置ssr、改正数、导航电文和掩码版本号
-3. 编码code1掩码计算CRC
-4. 再编码code3(码间偏差)和code6(轨道和钟差改正数)不分顺序
+```mermaid
+flowchart LR
+    encode(编码)
+    inssr("func inssr(ssr_str) ")
+    corrs("corrs(改正数数组)")
+    context("context(IOD设置)")
+    code1("code1(卫星掩码)")
+    code3("code3(码间偏差)")
+    code6("code6(轨道和钟差改正数))"
+    tran("传输")
+    subgraph "编码数据"
+        corrs
+        context
+    end
+    encode-->inssr-->|排序|corrs
+    编码数据-->code1 & code3 & code6-->|"CRC"|tran
+
+```
 
 ##### 解码
 
