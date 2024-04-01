@@ -486,7 +486,7 @@ uint64_t fillUpwards(uint64_t value, uint8_t originalLen)
 
 int encoding6(Corrections *corrs, int len, CRCCode *encoded_data)
 {
-    int ret = 3;
+    int ret = 4;
     // MesTypeID
     setBits(encoded_data, MAX_LEN_CRCMESSAGE - 6, MAX_LEN_CRCMESSAGE, 6);
     setBits(encoded_data, MAX_LEN_CRCMESSAGE - 14 - 17, MAX_LEN_CRCMESSAGE - 14, corrs[0].bdt);
@@ -495,7 +495,7 @@ int encoding6(Corrections *corrs, int len, CRCCode *encoded_data)
     setBits(encoded_data, MAX_LEN_CRCMESSAGE - 41 - 9, MAX_LEN_CRCMESSAGE - 41, corrs[0].SatSlot);
 
     int index_orb_begin = -1;
-    for (int i = 0; i < 3; i++)
+    for (int i = 0; i < ret; i++)
     { // 每条消息3组轨道钟差改正数
         if (i < len)
         {
@@ -510,7 +510,7 @@ int encoding6(Corrections *corrs, int len, CRCCode *encoded_data)
     // orb
     setBits(encoded_data, MAX_LEN_CRCMESSAGE - index_orb_begin - 17, MAX_LEN_CRCMESSAGE - index_orb_begin, corrs[0].bdt);
     setBits(encoded_data, MAX_LEN_CRCMESSAGE - index_orb_begin - 21 - 2, MAX_LEN_CRCMESSAGE - index_orb_begin - 21, corrs[0].IODSSR);
-    for (int i = 0; i < 3; i++)
+    for (int i = 0; i < ret; i++)
     { // 每条消息3组轨道钟差改正数
         if (i < len)
         {
