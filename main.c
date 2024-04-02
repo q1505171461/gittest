@@ -25,10 +25,10 @@ int main()
     fclose(file); // 关闭文件
 
     en_decodeContext context = {0};
-    context.IODCorr = 1;
-    context.IODN = 1;
+    context.IODCorr = 1; 
+    context.IODN = 1;     /* 需要告知版本号 */
     context.IODP = 1;
-    context.IODSSR = 1;
+    context.IODSSR = 1;  /* 需要告诉当前用的是哪个轨道 */
     Corrections corrs[indexSsrStr - 1];
     inputSsr(lines, &context, corrs, indexSsrStr);
 
