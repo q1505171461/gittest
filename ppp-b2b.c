@@ -496,7 +496,7 @@ int encoding6(Corrections *corrs, int len, CRCCode *encoded_data)
 
     int index_orb_begin = -1;
     for (int i = 0; i < ret; i++)
-    { // 每条消息3组轨道钟差改正数
+    { // 每条消息4组轨道钟差改正数
         if (i < len)
         {
             index_orb_begin = 50 + 18 * (i + 1);
@@ -511,7 +511,7 @@ int encoding6(Corrections *corrs, int len, CRCCode *encoded_data)
     setBits(encoded_data, MAX_LEN_CRCMESSAGE - index_orb_begin - 17, MAX_LEN_CRCMESSAGE - index_orb_begin, corrs[0].bdt);
     setBits(encoded_data, MAX_LEN_CRCMESSAGE - index_orb_begin - 21 - 2, MAX_LEN_CRCMESSAGE - index_orb_begin - 21, corrs[0].IODSSR);
     for (int i = 0; i < ret; i++)
-    { // 每条消息3组轨道钟差改正数
+    { // 每条消息4组轨道钟差改正数
         if (i < len)
         {
             setBits(encoded_data, MAX_LEN_CRCMESSAGE - index_orb_begin - 23 - 9, MAX_LEN_CRCMESSAGE - index_orb_begin - 23, corrs[i].SatSlot);

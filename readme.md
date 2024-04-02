@@ -65,7 +65,7 @@ main.c是一个示例
 
 #### 问题
 
-1. URAL算法$\text{URA}[mm] \leq 3 ^ {\text{URA} _\text{CLASS}} \hspace{0.3em} \left(1 + 0.25 \times \text{URA} _{\text{VALUE}} \right) - 1$
+1. URAL算法$$\text{URA}[mm] \leq 3 ^ {\text{URA} _\text{CLASS}} \hspace{0.3em} \left(1 + 0.25 \times \text{URA} _{\text{VALUE}} \right) - 1$$
 计算结果和文档中（17页）不一致  
 
 2. 编码类型对照表(有错误和未知项，需要更正和补充)
