@@ -1,4 +1,5 @@
 #include "ppp-b2b.h"
+// #include <linux/time.h>
 const char *tracking_modes[NUM_SYSTEMS][NUM_MODES] = {
     {"1I", "1C", "1W", "Reserved", "NAN", "NAN", "Reserved", "2I", "NAN", "Reserved", "Reserved", "Reserved", "3I", "Reserved", "Reserved", "Reserved"},
     {"NAN", "NAN", "Reserved", "Reserved", "1C", "NAN", "Reserved", "2L", "NAN", "Reserved", "Reserved", "5I", "5Q", "NAN", "Reserved", "Reserved"},
@@ -416,7 +417,7 @@ int encoding3(Corrections *corrs, int len, CRCCode *encoded_data)
     return n_used;
 }
 
-void decoding3(Corrections *corrs, int len, CRCCode *encoded_data, en_decodeContext* context)
+void decoding3(Corrections *corrs, int len, CRCCode *encoded_data, en_decodeContext *context)
 {
     if (!crcEncoding462_check(*encoded_data))
     {
@@ -484,9 +485,22 @@ uint64_t fillUpwards(uint64_t value, uint8_t originalLen)
     };
 }
 
-int encoding6(Corrections *corrs, int len, CRCCode *encoded_data)
+int encoding6(Corrections *corrs, int len, CRCCode *encoded_data, int flag_orb_or_clk)
 {
-    int ret = 4;
+    int ret_clk = 4;
+    int ret_orb = 4;
+    switch (flag_orb_or_clk)
+    {
+    case 1:
+        ret_clk = 22;
+        ret_orb = 0;
+        break;
+    case 2:
+        ret_clk = 0;
+        ret_orb = 6;
+        break;
+    }
+
     // MesTypeID
     setBits(encoded_data, MAX_LEN_CRCMESSAGE - 6, MAX_LEN_CRCMESSAGE, 6);
     setBits(encoded_data, MAX_LEN_CRCMESSAGE - 14 - 17, MAX_LEN_CRCMESSAGE - 14, corrs[0].bdt);
@@ -494,43 +508,60 @@ int encoding6(Corrections *corrs, int len, CRCCode *encoded_data)
     setBits(encoded_data, MAX_LEN_CRCMESSAGE - 37 - 4, MAX_LEN_CRCMESSAGE - 37, corrs[0].IODP);
     setBits(encoded_data, MAX_LEN_CRCMESSAGE - 41 - 9, MAX_LEN_CRCMESSAGE - 41, corrs[0].SatSlot);
 
-    int index_orb_begin = -1;
-    for (int i = 0; i < ret; i++)
-    { // 每条消息4组轨道钟差改正数
-        if (i < len)
-        {
-            index_orb_begin = 50 + 18 * (i + 1);
-            setBits(encoded_data, MAX_LEN_CRCMESSAGE - 6 - 5, MAX_LEN_CRCMESSAGE - 6, i + 1);
-            setBits(encoded_data, MAX_LEN_CRCMESSAGE - 11 - 3, MAX_LEN_CRCMESSAGE - 11, i + 1);
-            setBits(encoded_data, MAX_LEN_CRCMESSAGE - 50 - 3 - 18 * i, MAX_LEN_CRCMESSAGE - 50 - 18 * i, corrs[i].IODCorr);
-            setBits(encoded_data, MAX_LEN_CRCMESSAGE - 53 - 15 - 18 * i, MAX_LEN_CRCMESSAGE - 53 - 18 * i, corrs[i].cloCorr);
+    int index_orb_begin = 14;
+    if (flag_orb_or_clk == 0 || flag_orb_or_clk == 1)
+    {
+        setBits(encoded_data, MAX_LEN_CRCMESSAGE - 11 - 3, MAX_LEN_CRCMESSAGE - 11, 0);
+        for (int i = 0; i < ret_clk; i++)
+        { // 每条消息4组轨道钟差改正数
+            if (i < len)
+            {
+                index_orb_begin = 14 + 36 + 18 * (i + 1);
+                setBits(encoded_data, MAX_LEN_CRCMESSAGE - 6 - 5, MAX_LEN_CRCMESSAGE - 6, i + 1);
+
+                if (flag_orb_or_clk == 0 ){
+                setBits(encoded_data, MAX_LEN_CRCMESSAGE - 11 - 3, MAX_LEN_CRCMESSAGE - 11, i + 1);}
+                setBits(encoded_data, MAX_LEN_CRCMESSAGE - 50 - 3 - 18 * i, MAX_LEN_CRCMESSAGE - 50 - 18 * i, corrs[i].IODCorr);
+                setBits(encoded_data, MAX_LEN_CRCMESSAGE - 53 - 15 - 18 * i, MAX_LEN_CRCMESSAGE - 53 - 18 * i, corrs[i].cloCorr);
+            }
+            else
+                ret_clk = i;
         }
     }
 
     // orb
-    setBits(encoded_data, MAX_LEN_CRCMESSAGE - index_orb_begin - 17, MAX_LEN_CRCMESSAGE - index_orb_begin, corrs[0].bdt);
-    setBits(encoded_data, MAX_LEN_CRCMESSAGE - index_orb_begin - 21 - 2, MAX_LEN_CRCMESSAGE - index_orb_begin - 21, corrs[0].IODSSR);
-    for (int i = 0; i < ret; i++)
-    { // 每条消息4组轨道钟差改正数
-        if (i < len)
-        {
-            setBits(encoded_data, MAX_LEN_CRCMESSAGE - index_orb_begin - 23 - 9, MAX_LEN_CRCMESSAGE - index_orb_begin - 23, corrs[i].SatSlot);
-            setBits(encoded_data, MAX_LEN_CRCMESSAGE - index_orb_begin - 32 - 10, MAX_LEN_CRCMESSAGE - index_orb_begin - 32, corrs[i].IODN);
-            setBits(encoded_data, MAX_LEN_CRCMESSAGE - index_orb_begin - 42 - 3, MAX_LEN_CRCMESSAGE - index_orb_begin - 42, corrs[i].IODCorr);
-            setBits(encoded_data, MAX_LEN_CRCMESSAGE - index_orb_begin - 45 - 15, MAX_LEN_CRCMESSAGE - index_orb_begin - 45, corrs[i].radialCorr);
-            setBits(encoded_data, MAX_LEN_CRCMESSAGE - index_orb_begin - 60 - 13, MAX_LEN_CRCMESSAGE - index_orb_begin - 60, corrs[i].tangentialCorr);
-            setBits(encoded_data, MAX_LEN_CRCMESSAGE - index_orb_begin - 73 - 13, MAX_LEN_CRCMESSAGE - index_orb_begin - 73, corrs[i].normalCorr);
-            setBits(encoded_data, MAX_LEN_CRCMESSAGE - index_orb_begin - 86 - 3, MAX_LEN_CRCMESSAGE - index_orb_begin - 86, corrs[i].URAClass);
-            setBits(encoded_data, MAX_LEN_CRCMESSAGE - index_orb_begin - 89 - 3, MAX_LEN_CRCMESSAGE - index_orb_begin - 89, corrs[i].URAValue);
-            index_orb_begin += 69;
+    if (flag_orb_or_clk == 0 || flag_orb_or_clk == 2)
+    {
+        setBits(encoded_data, MAX_LEN_CRCMESSAGE - index_orb_begin - 17, MAX_LEN_CRCMESSAGE - index_orb_begin, corrs[0].bdt);
+        setBits(encoded_data, MAX_LEN_CRCMESSAGE - index_orb_begin - 21 - 2, MAX_LEN_CRCMESSAGE - index_orb_begin - 21, corrs[0].IODSSR);
+        setBits(encoded_data, MAX_LEN_CRCMESSAGE - 6 - 5, MAX_LEN_CRCMESSAGE - 6, 0);
+        for (int i = 0; i < ret_orb; i++)
+        { // 每条消息4组轨道钟差改正数
+            if (i < len)
+            {
+                if (flag_orb_or_clk == 0 ){
+                    setBits(encoded_data, MAX_LEN_CRCMESSAGE - 6 - 5, MAX_LEN_CRCMESSAGE - 6, i + 1);
+                }
+                setBits(encoded_data, MAX_LEN_CRCMESSAGE - 11 - 3, MAX_LEN_CRCMESSAGE - 11, i + 1);
+                setBits(encoded_data, MAX_LEN_CRCMESSAGE - index_orb_begin - 23 - 9, MAX_LEN_CRCMESSAGE - index_orb_begin - 23, corrs[i].SatSlot);
+                setBits(encoded_data, MAX_LEN_CRCMESSAGE - index_orb_begin - 32 - 10, MAX_LEN_CRCMESSAGE - index_orb_begin - 32, corrs[i].IODN);
+                setBits(encoded_data, MAX_LEN_CRCMESSAGE - index_orb_begin - 42 - 3, MAX_LEN_CRCMESSAGE - index_orb_begin - 42, corrs[i].IODCorr);
+                setBits(encoded_data, MAX_LEN_CRCMESSAGE - index_orb_begin - 45 - 15, MAX_LEN_CRCMESSAGE - index_orb_begin - 45, corrs[i].radialCorr);
+                setBits(encoded_data, MAX_LEN_CRCMESSAGE - index_orb_begin - 60 - 13, MAX_LEN_CRCMESSAGE - index_orb_begin - 60, corrs[i].tangentialCorr);
+                setBits(encoded_data, MAX_LEN_CRCMESSAGE - index_orb_begin - 73 - 13, MAX_LEN_CRCMESSAGE - index_orb_begin - 73, corrs[i].normalCorr);
+                setBits(encoded_data, MAX_LEN_CRCMESSAGE - index_orb_begin - 86 - 3, MAX_LEN_CRCMESSAGE - index_orb_begin - 86, corrs[i].URAClass);
+                setBits(encoded_data, MAX_LEN_CRCMESSAGE - index_orb_begin - 89 - 3, MAX_LEN_CRCMESSAGE - index_orb_begin - 89, corrs[i].URAValue);
+                index_orb_begin += 69;
+            }
+            else
+                ret_orb = i;
         }
-        else
-            ret = i;
     }
+
     // CRC
     uint32_t crc = crcEncoding462(*encoded_data);
     setBits(encoded_data, 0, 24, crc >> 8);
-    return ret;
+    return ret_clk==0?ret_orb:ret_clk;
 }
 
 void decoding6(Corrections *corrs, int len, CRCCode *encoded_data, en_decodeContext *context)
@@ -642,4 +673,43 @@ void print_encoded_data(CRCCode encoded_data)
     uint32_t crc = crcEncoding462(encoded_data);
     printf("CRC-24 校验码为: 0x%08X\n", crc >> 0);
     printf("\n");
+}
+void send_encoded_data_one_sec(CRCCode encoded_data)
+{
+    // 静态局部变量，保存上次执行的时间戳
+    static struct timespec last_exec_time = {0};
+    
+    // 获取当前时间
+    struct timespec current_time;
+    clock_gettime(CLOCK_MONOTONIC, &current_time);
+    
+    // 计算与上次执行时间的间隔（毫秒）
+    long seconds_elapsed = current_time.tv_sec - last_exec_time.tv_sec;
+    long nanoseconds_elapsed = current_time.tv_nsec - last_exec_time.tv_nsec;
+    long milliseconds_elapsed = (seconds_elapsed * 1000) + (nanoseconds_elapsed / 1000000);
+    
+    // 如果间隔小于1秒，则等待直到距离上次执行已满1秒
+    if (milliseconds_elapsed < 1000) {
+        // 计算需要等待的时间（毫秒）
+        long wait_time = 1000 - milliseconds_elapsed;
+        
+        // 定义需要等待的时间
+        struct timespec wait;
+        wait.tv_sec = wait_time / 1000;
+        wait.tv_nsec = (wait_time % 1000) * 1000000;
+        
+        // 使用 nanosleep() 函数等待指定时间
+        nanosleep(&wait, NULL);
+        
+        // 更新当前时间
+        clock_gettime(CLOCK_MONOTONIC, &current_time);
+        
+        // 更新间隔时间（毫秒）
+        seconds_elapsed = current_time.tv_sec - last_exec_time.tv_sec;
+        nanoseconds_elapsed = current_time.tv_nsec - last_exec_time.tv_nsec;
+        milliseconds_elapsed = (seconds_elapsed * 1000) + (nanoseconds_elapsed / 1000000);
+    }
+    
+    last_exec_time = current_time;
+    print_encoded_data(encoded_data);
 }

@@ -64,8 +64,9 @@ int main()
     while (n_used < indexSsrStr - 1)
     {
         CRCCode encoded_data = {0};
-        n_used += encoding6(corrs + n_used, indexSsrStr - 1 - n_used, &encoded_data);
-        print_encoded_data(encoded_data);
+        n_used += encoding6(corrs + n_used, indexSsrStr - 1 - n_used, &encoded_data, 2);
+        printf("%d\n", n_used);
+        send_encoded_data_one_sec(encoded_data);
         decoding6(corrs_decoded, len_sta_list, &encoded_data, &context_decode);
     }
     return 0;
